@@ -12,18 +12,6 @@
   "files": [
     "build"
   ],
-  "devDependencies": {
-    "@babel/preset-env": "^7.9.0",
-    "@babel/preset-typescript": "^7.9.0",
-    "@types/glob": "^7.1.1",
-    "@types/jest": "^25.1.4",
-    "graphql-tag": "^2.10.3",
-    "husky": "^4.2.3",
-    "jest": "^25.2.4",
-    "lint-staged": "^10.1.1",
-    "prettier": "^2.0.2",
-    "typescript": "^3.8.3"
-  },
   "dependencies": {
     "@babel/parser": "^7.9.4",
     "@babel/traverse": "^7.9.0",
@@ -32,7 +20,21 @@
     "@oclif/errors": "^1.2.2",
     "@oclif/plugin-help": "^2.2.3",
     "glob": "^7.1.6",
-    "graphql": "^14.6.0"
+    "graphql": "^14.6.0",
+    "lodash": "^4.17.15"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.9.0",
+    "@babel/preset-typescript": "^7.9.0",
+    "@types/glob": "^7.1.1",
+    "@types/jest": "^25.1.4",
+    "@types/lodash": "^4.14.149",
+    "graphql-tag": "^2.10.3",
+    "husky": "^4.2.3",
+    "jest": "^25.2.4",
+    "lint-staged": "^10.1.1",
+    "prettier": "^2.0.2",
+    "typescript": "^3.8.3"
   },
   "husky": {
     "hooks": {

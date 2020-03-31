@@ -1,4 +1,5 @@
 import { Command, flags } from "@oclif/command";
+import { flatMap } from "lodash";
 
 import { readFiles, findGraphqlDocuments, parseSchema } from "./parse";
 import { generateTypes } from "./generate";
@@ -40,10 +41,16 @@ class CLI extends Command {
     }
 
     const filesToCheck = await readFiles(files);
-    const documents: Document[] = filesToCheck.map(e => ({
-      ...e,
-      documents: findGraphqlDocuments(e.content)
-    }));
+    const documents: Document[] = flatMap(
+      filesToCheck
+        .map(e => ({
+          ...e,
+          documents: findGraphqlDocuments(e.content)
+        }))
+        // Only care about files with a graphql document
+        .filter(e => e.documents.length > 0),
+      e => e.documents.map(doc => ({ file: e.name, content: doc }))
+    );
     const schema = await parseSchema(schemaPath);
     const output = generateTypes(documents, schema);
     console.log(output);
