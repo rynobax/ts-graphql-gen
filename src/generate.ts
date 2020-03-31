@@ -7,17 +7,21 @@ import {
   FieldNode,
   validate,
   GraphQLSchema,
+  buildSchema,
 } from "graphql";
 import { capitalize } from "lodash";
 
-import { Document, SchemaTypeMap } from "./types";
+import { Document, SchemaTypeMap, SchemaValue } from "./types";
+import { computeSchemaTypeMap } from "./typeMap";
 
-export function generateTypesString(
-  documents: Document[],
-  typeMap: SchemaTypeMap,
-  schema: GraphQLSchema
-) {
-  return documents.map((doc) => docToString(doc, typeMap, schema)).join(EOL);
+export function generateTypesString(documents: Document[], schemaText: string) {
+  const typeMap = computeSchemaTypeMap(parse(schemaText));
+  const schema = buildSchema(schemaText);
+  return documents
+    .map((doc) => {
+      return docToString(doc, typeMap, schema);
+    })
+    .join(EOL);
 }
 
 interface ThingyError {
@@ -40,7 +44,7 @@ function docToString(
   const errors: ThingyError[] = [];
   const result = documentNode.definitions.map((node) => {
     try {
-      return nodeToString(node, typeMap);
+      return nodeToString(node, typeMap, []);
     } catch (err) {
       errors.push(err);
       return "";
@@ -58,10 +62,14 @@ function reportErrors(errors: ThingyError[], document: Document) {
   process.exit(1);
 }
 
-function nodeToString(node: DefinitionNode, typeMap: SchemaTypeMap): string {
+function nodeToString(
+  node: DefinitionNode,
+  typeMap: SchemaTypeMap,
+  history: string[]
+): string {
   switch (node.kind) {
     case "OperationDefinition":
-      return operationToString(node, typeMap);
+      return operationToString(node, typeMap, history);
     default:
       throw Error(`Unimplemented node kind ${node.kind}`);
   }
@@ -69,7 +77,8 @@ function nodeToString(node: DefinitionNode, typeMap: SchemaTypeMap): string {
 
 function operationToString(
   node: OperationDefinitionNode,
-  typeMap: SchemaTypeMap
+  typeMap: SchemaTypeMap,
+  history: string[]
 ): string {
   if (!node.name) throw Error(`Found a ${node.operation} without a name`);
   const name = node.name.value;
@@ -77,7 +86,7 @@ function operationToString(
   const fullName = name + suffix;
 
   const selectionText = node.selectionSet.selections.map((sel) =>
-    selectionToString(sel, typeMap)
+    selectionToString(sel, typeMap, [...history, suffix])
   );
 
   return `
@@ -90,35 +99,79 @@ function operationToString(
 
 function selectionToString(
   node: SelectionNode,
-  typeMap: SchemaTypeMap
+  typeMap: SchemaTypeMap,
+  history: string[]
 ): string {
   switch (node.kind) {
     case "Field":
-      return fieldToString(node, typeMap);
+      return fieldToString(node, typeMap, history);
     default:
       throw Error(`Unimplemented selection kind ${node.kind}`);
   }
 }
 
-function fieldToString(node: FieldNode, typeMap: SchemaTypeMap): string {
+function fieldToString(
+  node: FieldNode,
+  typeMap: SchemaTypeMap,
+  history: string[]
+): string {
   const name = node.name.value;
+  const newHistory = [...history, name];
   if (node.selectionSet) {
     const selectionText = node.selectionSet.selections.map((sel) =>
-      selectionToString(sel, typeMap)
+      selectionToString(sel, typeMap, newHistory)
     );
-    return `
-    ${name}: {
+    return `${name}: {
       ${selectionText}
-    }
-    `;
+    }`;
   } else {
-    console.log(node);
-    return `${name}: ${resolveTSTypeFromMap(name, typeMap)}`;
+    return `${name}: ${resolveTSTypeFromMap(typeMap, newHistory)};`;
   }
 }
 
-function resolveTSTypeFromMap(type: string, typeMap: SchemaTypeMap) {
-  console.log(type);
-  console.log(typeMap);
-  return typeMap[type];
+function resolveTSTypeFromMap(typeMap: SchemaTypeMap, history: string[]) {
+  let last: SchemaTypeMap[string] | null = null;
+  let lastValue: SchemaValue | null = null;
+  history.forEach((k) => {
+    if (last) {
+      lastValue = last[k];
+      last = typeMap[lastValue.value];
+    } else {
+      last = typeMap[k];
+    }
+  });
+  if (!lastValue) throw Error();
+  return graphqlTypeToTS(lastValue);
+}
+
+function graphqlTypeToTS(v: SchemaValue): string {
+  let res = "";
+  switch (v.value) {
+    case "Boolean":
+      res = "boolean";
+      break;
+    case "Float":
+      res = "number";
+      break;
+    case "ID":
+      res = "string";
+      break;
+    case "Int":
+      res = "number";
+      break;
+    case "String":
+      res = "string";
+      break;
+    default:
+      throw Error(`Unknown GraphQL scalar ${v.value}`);
+  }
+
+  if (v.nullable) res += " | null";
+
+  if (v.list) {
+    res = `Array<${res}>`;
+    if (v.list.nullable) res += ` | null`;
+  }
+
+  return res;
 }

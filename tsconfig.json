@@ -8,6 +8,8 @@
     "lib": ["ES2015"],
     "target": "ES2015",
     "rootDir": "src",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "include": ["src"]
 }

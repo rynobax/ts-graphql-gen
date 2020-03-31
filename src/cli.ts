@@ -1,7 +1,7 @@
 import { Command, flags } from "@oclif/command";
 import { flatMap } from "lodash";
 
-import { readFiles, findGraphqlDocuments, parseSchema } from "./parse";
+import { readFiles, findGraphqlDocuments, readSchema } from "./parse";
 import { generateTypesString } from "./generate";
 import { Document } from "./types";
 
@@ -51,8 +51,8 @@ class CLI extends Command {
         .filter((e) => e.documents.length > 0),
       (e) => e.documents.map((doc) => ({ file: e.name, content: doc }))
     );
-    const { schema, typeMap } = await parseSchema(schemaPath);
-    const output = generateTypesString(documents, typeMap, schema);
+    const schemaText = await readSchema(schemaPath);
+    const output = generateTypesString(documents, schemaText);
 
     console.log(output);
 

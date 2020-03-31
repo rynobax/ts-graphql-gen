@@ -1,9 +1,9 @@
-import { buildSchema } from "graphql";
+import { format as prettierFormat } from "prettier";
 
 import { generateTypesString } from "../src/generate";
 import { Document } from "../src/types";
 
-const schema = buildSchema(`
+const userSchema = `
 schema {
   query: Query
 }
@@ -15,36 +15,40 @@ type Query {
 type User {
   id: String!
 }
-`);
+`;
 
 const doc = (content: string): Document => ({
   file: "somefile.ts",
   content: content.trim(),
 });
 
+const fmt = (str: string) => prettierFormat(str, { parser: "typescript" });
+
 describe("generateTypes", () => {
-  test("basic", () => {
-    expect(
-      generateTypesString(
-        [
-          doc(`
-    query Me {
-      me {
-        id
-      }
-    }
-    `),
-        ],
-        schema
-      )
-    ).toEqual(`
-    type MeQuery = {
-      data: {
+  test.each<[string, string[], string, string]>([
+    [
+      "basic",
+      [
+        `
+        query Me {
+          me {
+            id
+          }
+        }`,
+      ],
+      `
+      type MeQuery = {
+        __typename: 'Query';
         me: {
-          id: String
+          id: string;
         }
       }
-    }
-    `);
+      `,
+      userSchema,
+    ],
+  ])("%s", (_title, queries, result, schema) => {
+    expect(fmt(generateTypesString(queries.map(doc), schema))).toEqual(
+      fmt(result)
+    );
   });
 });
