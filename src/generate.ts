@@ -8,11 +8,13 @@ import {
   validate,
   GraphQLSchema,
   buildSchema,
+  FragmentDefinitionNode,
 } from "graphql";
 import { capitalize } from "lodash";
 
-import { Document, SchemaTypeMap, SchemaValue } from "./types";
-import { computeSchemaTypeMap } from "./typeMap";
+import { Document, SchemaTypeMap } from "./types";
+import { computeSchemaTypeMap, findCurrentTypeInMap } from "./typeMap";
+import { listIfNecessary, graphqlTypeToTS } from "./print";
 
 export function generateTypesString(
   documents: Document[],
@@ -26,6 +28,12 @@ export function generateTypesString(
     })
     .join(EOL);
   return result;
+}
+
+function isFragmentDefinition(
+  node: DefinitionNode
+): node is FragmentDefinitionNode {
+  return node.kind === "FragmentDefinition";
 }
 
 interface ThingyError {
@@ -46,9 +54,12 @@ function docToString(
       document
     );
   const errors: ThingyError[] = [];
+
+  const fragments = documentNode.definitions.filter(isFragmentDefinition);
+
   const result = documentNode.definitions.map((node) => {
     try {
-      const res = nodeToString(node, typeMap, []);
+      const res = nodeToString(node, typeMap, fragments, []);
       return res;
     } catch (err) {
       errors.push(err);
@@ -71,11 +82,15 @@ function reportErrors(errors: ThingyError[], document: Document) {
 function nodeToString(
   node: DefinitionNode,
   typeMap: SchemaTypeMap,
+  fragments: FragmentDefinitionNode[],
   history: string[]
 ): string {
   switch (node.kind) {
     case "OperationDefinition":
-      return operationToString(node, typeMap, history);
+      return operationToString(node, typeMap, fragments, history);
+    case "FragmentDefinition":
+      // TODO: Maybe write these out someday
+      return "";
     default:
       throw Error(`Unimplemented node kind ${node.kind}`);
   }
@@ -84,6 +99,7 @@ function nodeToString(
 function operationToString(
   node: OperationDefinitionNode,
   typeMap: SchemaTypeMap,
+  fragments: FragmentDefinitionNode[],
   history: string[]
 ): string {
   if (!node.name) throw Error(`Found a ${node.operation} without a name`);
@@ -92,7 +108,9 @@ function operationToString(
   const fullName = name + suffix;
 
   const selectionText = node.selectionSet.selections
-    .map((sel) => selectionToString(sel, typeMap, [...history, suffix]))
+    .map((sel) =>
+      selectionToString(sel, typeMap, fragments, [...history, suffix])
+    )
     .join(EOL);
 
   return `
@@ -106,11 +124,21 @@ function operationToString(
 function selectionToString(
   node: SelectionNode,
   typeMap: SchemaTypeMap,
+  fragments: FragmentDefinitionNode[],
   history: string[]
 ): string {
   switch (node.kind) {
     case "Field":
-      return fieldToString(node, typeMap, history);
+      return fieldToString(node, typeMap, fragments, history);
+    case "FragmentSpread":
+      // With a fragment, we lookup the fragment, then render it's selections
+      const fragmentName = node.name.value;
+      const fragment = fragments.find((f) => f.name.value === fragmentName);
+      if (!fragment)
+        throw Error(`Could not find fragment definition ${fragmentName}`);
+      return fragment.selectionSet.selections
+        .map((s) => selectionToString(s, typeMap, fragments, history))
+        .join(EOL);
     default:
       throw Error(`Unimplemented selection kind ${node.kind}`);
   }
@@ -119,6 +147,7 @@ function selectionToString(
 function fieldToString(
   node: FieldNode,
   typeMap: SchemaTypeMap,
+  fragments: FragmentDefinitionNode[],
   history: string[]
 ): string {
   const name = node.name.value;
@@ -126,7 +155,7 @@ function fieldToString(
   const currentType = findCurrentTypeInMap(typeMap, newHistory);
   if (node.selectionSet) {
     const selectionText = node.selectionSet.selections
-      .map((sel) => selectionToString(sel, typeMap, newHistory))
+      .map((sel) => selectionToString(sel, typeMap, fragments, newHistory))
       .join(EOL);
     const innerText = `{
       __typename: "${currentType.value}";
@@ -135,64 +164,5 @@ function fieldToString(
     return `${name}: ${listIfNecessary(currentType, innerText)}`;
   } else {
     return `${name}: ${graphqlTypeToTS(currentType)};`;
-  }
-}
-
-function findCurrentTypeInMap(
-  typeMap: SchemaTypeMap,
-  history: string[]
-): SchemaValue {
-  let last: SchemaTypeMap[string] | null = null;
-  let lastValue: SchemaValue | null = null;
-  history.forEach((k) => {
-    if (last) {
-      lastValue = last[k];
-      last = typeMap[lastValue.value];
-    } else {
-      last = typeMap[k];
-    }
-  });
-  if (!lastValue) throw Error();
-  return lastValue;
-}
-
-function graphqlTypeToTS(v: SchemaValue): string {
-  let res = "";
-  switch (v.value) {
-    case "Boolean":
-      res = "boolean";
-      break;
-    case "Float":
-      res = "number";
-      break;
-    case "ID":
-      res = "string";
-      break;
-    case "Int":
-      res = "number";
-      break;
-    case "String":
-      res = "string";
-      break;
-    default:
-      throw Error(`Unknown GraphQL scalar ${v.value}`);
-  }
-
-  if (v.nullable) res += " | null";
-
-  if (v.list) {
-    res = `Array<${res}>`;
-    if (v.list.nullable) res += ` | null`;
-  }
-
-  return res;
-}
-
-function listIfNecessary(v: SchemaValue, content: string) {
-  if (!v.list) return content;
-  if (v.list.nullable) {
-    return `Array<${content} | null>`;
-  } else {
-    return `Array<${content}>`;
   }
 }

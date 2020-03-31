@@ -3,7 +3,7 @@ import { format as prettierFormat } from "prettier";
 import { generateTypesString } from "../src/generate";
 import { Document } from "../src/types";
 
-const userSchema = `
+const schema = `
 schema {
   query: Query
 }
@@ -22,6 +22,7 @@ type Testing {
 
 type User {
   id: String!
+  email: String
   bio: String
   logins: [Int!]!
   friends: [User!]!
@@ -69,7 +70,7 @@ describe("generateTypes", () => {
       }
     }
     `,
-      userSchema
+      schema
     );
   });
 
@@ -92,7 +93,7 @@ describe("generateTypes", () => {
         }
       }
       `,
-      userSchema
+      schema
     );
   });
 
@@ -121,7 +122,7 @@ describe("generateTypes", () => {
         }
       }
       `,
-      userSchema
+      schema
     );
   });
 
@@ -167,7 +168,38 @@ describe("generateTypes", () => {
       }
     }
     `,
-      userSchema
+      schema
+    );
+  });
+
+  test("basic fragment", () => {
+    runTest(
+      [
+        `
+      query Me {
+        me {
+          id
+          ...Bio
+        }
+      }
+      fragment Bio on User {
+        bio
+        email
+      }
+      `,
+      ],
+      `
+    type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        id: string;
+        bio: string | null;
+        email: string | null;
+      }
+    }
+    `,
+      schema
     );
   });
 });

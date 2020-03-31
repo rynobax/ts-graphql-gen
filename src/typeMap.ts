@@ -58,10 +58,15 @@ export function computeSchemaTypeMap(document: DocumentNode) {
       case "SchemaDefinition":
         break;
       case "ObjectTypeDefinition":
-        schema[def.name.value] = {};
+        const name = def.name.value;
+        if (schema[name]) {
+          // TODO: test this
+          throw Error(`Duplicate name ${name}`);
+        }
+        schema[name] = {};
         def.fields?.forEach((field) => {
           const key = field.name.value;
-          schema[def.name.value][key] = getFieldSchemaValue(field);
+          schema[name][key] = getFieldSchemaValue(field);
         });
         return;
       default:
@@ -69,4 +74,22 @@ export function computeSchemaTypeMap(document: DocumentNode) {
     }
   });
   return schema;
+}
+
+export function findCurrentTypeInMap(
+  typeMap: SchemaTypeMap,
+  history: string[]
+): SchemaValue {
+  let last: SchemaTypeMap[string] | null = null;
+  let lastValue: SchemaValue | null = null;
+  history.forEach((k) => {
+    if (last) {
+      lastValue = last[k];
+      last = typeMap[lastValue.value];
+    } else {
+      last = typeMap[k];
+    }
+  });
+  if (!lastValue) throw Error();
+  return lastValue;
 }
