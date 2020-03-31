@@ -1,6 +1,6 @@
 import { buildSchema } from "graphql";
 
-import { generateTypes } from "../src/generate";
+import { generateTypesString } from "../src/generate";
 import { Document } from "../src/types";
 
 const schema = buildSchema(`
@@ -25,7 +25,7 @@ const doc = (content: string): Document => ({
 describe("generateTypes", () => {
   test("basic", () => {
     expect(
-      generateTypes(
+      generateTypesString(
         [
           doc(`
     query Me {
