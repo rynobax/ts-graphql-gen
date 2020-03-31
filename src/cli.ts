@@ -1,5 +1,7 @@
 import { Command, flags } from "@oclif/command";
 
+import { readFiles, findGraphqlDocuments } from "./parse";
+
 class CLI extends Command {
   static description = "Generate typescript types from graphql files";
 
@@ -13,22 +15,23 @@ class CLI extends Command {
 
   async run() {
     const {
-      args,
-      flags: { files, version, out }
+      flags: { files, out }
     } = this.parse(CLI);
-
-    if (version) {
-      this.log(`TODO: Print version`);
-    }
 
     if (!files) {
       // TODO: Complain about lack of files
+      this.log("You need to provide files!!");
+      this.exit(1);
     }
 
     // TODO: Resolve glob pattern
-    const filesToCheck = [];
+    const filesToCheck = await readFiles(files);
+    const documents = filesToCheck.map(e => ({
+      ...e,
+      documents: findGraphqlDocuments(e.content)
+    }));
 
-    if(!out) {
+    if (!out) {
       // TODO: Complain about lack of out
     }
 
@@ -37,4 +40,4 @@ class CLI extends Command {
   }
 }
 
-export default CLI;
+(CLI.run() as Promise<unknown>).catch(require("@oclif/errors/handle"));
