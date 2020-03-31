@@ -58,10 +58,10 @@ function reportErrors(errors: ThingyError[], document: Document) {
   process.exit(1);
 }
 
-function nodeToString(node: DefinitionNode, schema: SchemaTypeMap): string {
+function nodeToString(node: DefinitionNode, typeMap: SchemaTypeMap): string {
   switch (node.kind) {
     case "OperationDefinition":
-      return operationToString(node, schema);
+      return operationToString(node, typeMap);
     default:
       throw Error(`Unimplemented node kind ${node.kind}`);
   }
@@ -69,7 +69,7 @@ function nodeToString(node: DefinitionNode, schema: SchemaTypeMap): string {
 
 function operationToString(
   node: OperationDefinitionNode,
-  schema: SchemaTypeMap
+  typeMap: SchemaTypeMap
 ): string {
   if (!node.name) throw Error(`Found a ${node.operation} without a name`);
   const name = node.name.value;
@@ -77,7 +77,7 @@ function operationToString(
   const fullName = name + suffix;
 
   const selectionText = node.selectionSet.selections.map((sel) =>
-    selectionToString(sel, schema)
+    selectionToString(sel, typeMap)
   );
 
   return `
@@ -88,21 +88,23 @@ function operationToString(
   `;
 }
 
-function selectionToString(node: SelectionNode, schema: SchemaTypeMap): string {
+function selectionToString(
+  node: SelectionNode,
+  typeMap: SchemaTypeMap
+): string {
   switch (node.kind) {
     case "Field":
-      return fieldToString(node, schema);
+      return fieldToString(node, typeMap);
     default:
       throw Error(`Unimplemented selection kind ${node.kind}`);
   }
 }
 
-function fieldToString(node: FieldNode, schema: SchemaTypeMap): string {
+function fieldToString(node: FieldNode, typeMap: SchemaTypeMap): string {
   const name = node.name.value;
-  // console.log(node);
   if (node.selectionSet) {
     const selectionText = node.selectionSet.selections.map((sel) =>
-      selectionToString(sel, schema)
+      selectionToString(sel, typeMap)
     );
     return `
     ${name}: {
@@ -111,15 +113,12 @@ function fieldToString(node: FieldNode, schema: SchemaTypeMap): string {
     `;
   } else {
     console.log(node);
-    // console.log(schema.getType('Query'));
-    // console.log(schema.getTypeMap());
-    // visit(schema.astNode!, {
-    //   enter(node) {
-    //     console.log(node);
-    //   }
-    // })
-    // console.log(schema);
-    // console.log(schema.extensionASTNodes?.map(e => print(e)))
-    throw Error("What to do with no selectionset");
+    return `${name}: ${resolveTSTypeFromMap(name, typeMap)}`;
   }
+}
+
+function resolveTSTypeFromMap(type: string, typeMap: SchemaTypeMap) {
+  console.log(type);
+  console.log(typeMap);
+  return typeMap[type];
 }
