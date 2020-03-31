@@ -10,7 +10,7 @@ import {
   buildSchema,
   FragmentDefinitionNode,
 } from "graphql";
-import { capitalize } from "lodash";
+import { capitalize, flatMap } from "lodash";
 
 import { Document, SchemaTypeMap } from "./types";
 import { computeSchemaTypeMap, findCurrentTypeInMap } from "./typeMap";
@@ -109,7 +109,7 @@ function operationToString(
 
   const selectionText = node.selectionSet.selections
     .map((sel) =>
-      selectionToString(sel, typeMap, fragments, [...history, suffix])
+      selectionToString(sel, typeMap, fragments, [...history, suffix]).join(EOL)
     )
     .join(EOL);
 
@@ -126,19 +126,21 @@ function selectionToString(
   typeMap: SchemaTypeMap,
   fragments: FragmentDefinitionNode[],
   history: string[]
-): string {
+): string[] {
   switch (node.kind) {
     case "Field":
-      return fieldToString(node, typeMap, fragments, history);
+      return [fieldToString(node, typeMap, fragments, history)];
     case "FragmentSpread":
       // With a fragment, we lookup the fragment, then render it's selections
       const fragmentName = node.name.value;
       const fragment = fragments.find((f) => f.name.value === fragmentName);
       if (!fragment)
         throw Error(`Could not find fragment definition ${fragmentName}`);
-      return fragment.selectionSet.selections
-        .map((s) => selectionToString(s, typeMap, fragments, history))
-        .join(EOL);
+      return flatMap(
+        fragment.selectionSet.selections.map((s) =>
+          selectionToString(s, typeMap, fragments, history)
+        )
+      );
     default:
       throw Error(`Unimplemented selection kind ${node.kind}`);
   }
@@ -154,9 +156,17 @@ function fieldToString(
   const newHistory = [...history, name];
   const currentType = findCurrentTypeInMap(typeMap, newHistory);
   if (node.selectionSet) {
-    const selectionText = node.selectionSet.selections
-      .map((sel) => selectionToString(sel, typeMap, fragments, newHistory))
-      .join(EOL);
+    const selections = flatMap(
+      node.selectionSet.selections.map((sel) =>
+        selectionToString(sel, typeMap, fragments, newHistory)
+      )
+    );
+    const uniqueSelections = selections.filter((e, i) => {
+      const getPrefix = (s: string) => s.trim().slice(0, s.indexOf(":"));
+      const prefix = getPrefix(e);
+      return selections.findIndex((s) => getPrefix(s) === prefix) === i;
+    });
+    const selectionText = uniqueSelections.join(EOL);
     const innerText = `{
       __typename: "${currentType.value}";
       ${selectionText}

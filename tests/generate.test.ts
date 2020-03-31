@@ -202,4 +202,109 @@ describe("generateTypes", () => {
       schema
     );
   });
+
+  test("fragment with object", () => {
+    runTest(
+      [
+        `
+      query Me {
+        me {
+          ...Friends
+        }
+      }
+      fragment Friends on User {
+        friends {
+          id
+        }
+      }
+      `,
+      ],
+      `
+    type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        friends: Array<{
+          __typename: 'User';
+          id: string;
+        }>
+      }
+    }
+    `,
+      schema
+    );
+  });
+
+  test("nested fragments", () => {
+    runTest(
+      [
+        `
+      query Me {
+        me {
+          ...Friends
+        }
+      }
+
+      fragment Friends on User {
+        friends {
+          id
+          ...Bio
+        }
+      }
+    
+      fragment Bio on User {
+        bio
+        email
+      }
+      `,
+      ],
+      `
+    type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        friends: Array<{
+          __typename: 'User';
+          id: string;
+          bio: string | null;
+          email: string | null;
+        }>
+      }
+    }
+    `,
+      schema
+    );
+  });
+
+  test("Duplicated fields", () => {
+    runTest(
+      [
+        `
+      query Me {
+        me {
+          id
+          id
+          ...DuplicateFrag
+        }
+      }
+      fragment DuplicateFrag on User {
+        id
+        email
+        email
+      }
+      `,
+      ],
+      `
+    type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        id: string;
+        email: string | null;
+      }
+    }
+    `,
+      schema
+    );
+  });
 });
