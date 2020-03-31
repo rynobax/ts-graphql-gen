@@ -58,6 +58,7 @@ export function computeSchemaTypeMap(document: DocumentNode) {
       case "SchemaDefinition":
         break;
       case "ObjectTypeDefinition":
+      case "InterfaceTypeDefinition":
         const name = def.name.value;
         if (schema[name]) {
           // TODO: test this

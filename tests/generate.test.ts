@@ -3,7 +3,7 @@ import { format as prettierFormat } from "prettier";
 import { generateTypesString } from "../src/generate";
 import { Document } from "../src/types";
 
-const schema = `
+const simpleSchema = `
 schema {
   query: Query
 }
@@ -70,7 +70,7 @@ describe("generateTypes", () => {
       }
     }
     `,
-      schema
+      simpleSchema
     );
   });
 
@@ -93,7 +93,7 @@ describe("generateTypes", () => {
         }
       }
       `,
-      schema
+      simpleSchema
     );
   });
 
@@ -122,7 +122,7 @@ describe("generateTypes", () => {
         }
       }
       `,
-      schema
+      simpleSchema
     );
   });
 
@@ -168,7 +168,7 @@ describe("generateTypes", () => {
       }
     }
     `,
-      schema
+      simpleSchema
     );
   });
 
@@ -199,7 +199,7 @@ describe("generateTypes", () => {
       }
     }
     `,
-      schema
+      simpleSchema
     );
   });
 
@@ -231,7 +231,7 @@ describe("generateTypes", () => {
       }
     }
     `,
-      schema
+      simpleSchema
     );
   });
 
@@ -272,7 +272,7 @@ describe("generateTypes", () => {
       }
     }
     `,
-      schema
+      simpleSchema
     );
   });
 
@@ -304,7 +304,66 @@ describe("generateTypes", () => {
       }
     }
     `,
-      schema
+      simpleSchema
+    );
+  });
+
+  const interfaceSchema = `
+  schema {
+    query: Query
+  }
+
+  type Query {
+    dog: Dog!
+    cat: Cat!
+    animal: Animal!
+  }
+
+  interface Animal {
+    id: String!
+    fur: String!
+  }
+
+  type Dog implements Animal {
+    id: String!
+    fur: String!
+    barks: Boolean!
+  }
+
+  type Cat implements Animal {
+    id: String!
+    fur: String!
+    meows: Boolean!
+  }
+  `;
+
+  test("interface 1", () => {
+    runTest(
+      [
+        `
+      query Dog {
+        dog {
+          id
+          fur
+          barks
+        }
+      }
+      `,
+      ],
+      `
+    type DogQuery = {
+      __typename: 'Query';
+      dog: {
+        __typename: 'Dog';
+        id: string;
+        fur: string;
+        barks: boolean;
+      }
+    }
+    `,
+      interfaceSchema
     );
   });
 });
+
+// TODO: Test multiple documents
