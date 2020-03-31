@@ -128,10 +128,11 @@ function fieldToString(
     const selectionText = node.selectionSet.selections
       .map((sel) => selectionToString(sel, typeMap, newHistory))
       .join(EOL);
-    return `${name}: {
+    const innerText = `{
       __typename: "${currentType.value}";
       ${selectionText}
     }`;
+    return `${name}: ${listIfNecessary(currentType, innerText)}`;
   } else {
     return `${name}: ${graphqlTypeToTS(currentType)};`;
   }
@@ -185,4 +186,13 @@ function graphqlTypeToTS(v: SchemaValue): string {
   }
 
   return res;
+}
+
+function listIfNecessary(v: SchemaValue, content: string) {
+  if (!v.list) return content;
+  if (v.list.nullable) {
+    return `Array<${content} | null>`;
+  } else {
+    return `Array<${content}>`;
+  }
 }

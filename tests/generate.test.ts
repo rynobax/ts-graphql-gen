@@ -125,7 +125,7 @@ describe("generateTypes", () => {
     );
   });
 
-  test.skip("nested users", () => {
+  test("nested users", () => {
     runTest(
       [
         `
@@ -139,6 +139,7 @@ describe("generateTypes", () => {
             }
             friends {
               id
+              logins
             }
           }
         }
@@ -148,14 +149,19 @@ describe("generateTypes", () => {
     type MyFriendsQuery = {
       __typename: 'Query';
       me: {
+        __typename: "User";
         id: string;
         friends: Array<{
+          __typename: "User";
           name: {
+            __typename: "Name";
             first: string;
             last: string;
           }
           friends: Array<{
+            __typename: "User";
             id: string;
+            logins: Array<number>;
           }>
         }>
       }
