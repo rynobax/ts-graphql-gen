@@ -12,14 +12,14 @@ class CLI extends Command {
     version: flags.version({ char: "v" }),
     files: flags.string({ char: "f" }),
     out: flags.string({ char: "o" }),
-    schema: flags.string({ char: "s" })
+    schema: flags.string({ char: "s" }),
   };
 
   static args = [{ name: "file" }];
 
   async run() {
     const {
-      flags: { files, out, schema: schemaPath }
+      flags: { files, out, schema: schemaPath },
     } = this.parse(CLI);
 
     if (!files) {
@@ -43,16 +43,17 @@ class CLI extends Command {
     const filesToCheck = await readFiles(files);
     const documents: Document[] = flatMap(
       filesToCheck
-        .map(e => ({
+        .map((e) => ({
           ...e,
-          documents: findGraphqlDocuments(e.content)
+          documents: findGraphqlDocuments(e.content),
         }))
         // Only care about files with a graphql document
-        .filter(e => e.documents.length > 0),
-      e => e.documents.map(doc => ({ file: e.name, content: doc }))
+        .filter((e) => e.documents.length > 0),
+      (e) => e.documents.map((doc) => ({ file: e.name, content: doc }))
     );
     const schema = await parseSchema(schemaPath);
     const output = generateTypes(documents, schema);
+
     console.log(output);
 
     // TODO: Write output to file
