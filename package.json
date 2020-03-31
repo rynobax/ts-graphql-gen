@@ -1,0 +1,15 @@
+{
+  "name": "ts-graphql-gen",
+  "version": "0.0.1",
+  "bin": "build/cli.js",
+  "repository": "https://github.com/rynobax/ts-graphql-gen.git",
+  "author": "Ryan Baxley <ryan.baxley1@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "jest": "^25.2.4",
+    "typescript": "^3.8.3"
+  }
+}
