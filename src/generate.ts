@@ -97,7 +97,7 @@ function operationToString(
 
   return `
   type ${fullName} = {
-    __typename: '${suffix}';
+    __typename: "${suffix}";
     ${selectionText}
   }
   `;
@@ -123,22 +123,24 @@ function fieldToString(
 ): string {
   const name = node.name.value;
   const newHistory = [...history, name];
+  const currentType = findCurrentTypeInMap(typeMap, newHistory);
   if (node.selectionSet) {
     const selectionText = node.selectionSet.selections
       .map((sel) => selectionToString(sel, typeMap, newHistory))
       .join(EOL);
     return `${name}: {
+      __typename: "${currentType.value}";
       ${selectionText}
     }`;
   } else {
-    return `${name}: ${resolveTSTypeFromMap(typeMap, newHistory)};`;
+    return `${name}: ${graphqlTypeToTS(currentType)};`;
   }
 }
 
-function resolveTSTypeFromMap(
+function findCurrentTypeInMap(
   typeMap: SchemaTypeMap,
   history: string[]
-): string {
+): SchemaValue {
   let last: SchemaTypeMap[string] | null = null;
   let lastValue: SchemaValue | null = null;
   history.forEach((k) => {
@@ -150,7 +152,7 @@ function resolveTSTypeFromMap(
     }
   });
   if (!lastValue) throw Error();
-  return graphqlTypeToTS(lastValue);
+  return lastValue;
 }
 
 function graphqlTypeToTS(v: SchemaValue): string {

@@ -10,12 +10,27 @@ schema {
 
 type Query {
   me: User!
+  testing: Testing
+}
+
+type Testing {
+  listOne: [Int!]!
+  listTwo: [Int!]
+  listThree: [Int]!
+  listFour: [Int]
 }
 
 type User {
   id: String!
   bio: String
   logins: [Int!]!
+  friends: [User!]!
+  name: Name!
+}
+
+type Name {
+  first: String!
+  last: String!
 }
 `;
 
@@ -33,7 +48,7 @@ describe("generateTypes", () => {
     );
   };
 
-  test.only("basic", () => {
+  test("basic", () => {
     runTest(
       [
         `
@@ -48,6 +63,7 @@ describe("generateTypes", () => {
     type MeQuery = {
       __typename: 'Query';
       me: {
+        __typename: 'User';
         id: string;
         bio: string | null;
       }
@@ -71,10 +87,80 @@ describe("generateTypes", () => {
       type MeQuery = {
         __typename: 'Query';
         me: {
+          __typename: 'User';
           logins: Array<number>;
         }
       }
       `,
+      userSchema
+    );
+  });
+
+  test("list combinations", () => {
+    runTest(
+      [
+        `
+        query ListTests {
+          testing {
+            listOne
+            listTwo
+            listThree
+            listFour
+          }
+        }`,
+      ],
+      `
+      type ListTestsQuery = {
+        __typename: 'Query';
+        testing: {
+          __typename: 'Testing';
+          listOne: Array<number>;
+          listTwo: Array<number> | null;
+          listThree: Array<number | null>;
+          listFour: Array<number| null> | null;
+        }
+      }
+      `,
+      userSchema
+    );
+  });
+
+  test.skip("nested users", () => {
+    runTest(
+      [
+        `
+      query MyFriends {
+        me {
+          id
+          friends {
+            name {
+              first
+              last
+            }
+            friends {
+              id
+            }
+          }
+        }
+      }`,
+      ],
+      `
+    type MyFriendsQuery = {
+      __typename: 'Query';
+      me: {
+        id: string;
+        friends: Array<{
+          name: {
+            first: string;
+            last: string;
+          }
+          friends: Array<{
+            id: string;
+          }>
+        }>
+      }
+    }
+    `,
       userSchema
     );
   });
