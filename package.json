@@ -31,7 +31,8 @@
     "@oclif/config": "^1.14.0",
     "@oclif/errors": "^1.2.2",
     "@oclif/plugin-help": "^2.2.3",
-    "glob": "^7.1.6"
+    "glob": "^7.1.6",
+    "graphql": "^14.6.0"
   },
   "husky": {
     "hooks": {

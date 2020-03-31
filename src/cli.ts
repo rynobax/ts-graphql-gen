@@ -1,6 +1,8 @@
 import { Command, flags } from "@oclif/command";
 
-import { readFiles, findGraphqlDocuments } from "./parse";
+import { readFiles, findGraphqlDocuments, parseSchema } from "./parse";
+import { generateTypes } from "./generate";
+import { Document } from "./types";
 
 class CLI extends Command {
   static description = "Generate typescript types from graphql files";
@@ -8,35 +10,45 @@ class CLI extends Command {
   static flags = {
     version: flags.version({ char: "v" }),
     files: flags.string({ char: "f" }),
-    out: flags.string({ char: "o" })
+    out: flags.string({ char: "o" }),
+    schema: flags.string({ char: "s" })
   };
 
   static args = [{ name: "file" }];
 
   async run() {
     const {
-      flags: { files, out }
+      flags: { files, out, schema: schemaPath }
     } = this.parse(CLI);
 
     if (!files) {
       // TODO: Complain about lack of files
-      this.log("You need to provide files!!");
+      this.log("You need to provide files");
       this.exit(1);
     }
 
-    // TODO: Resolve glob pattern
-    const filesToCheck = await readFiles(files);
-    const documents = filesToCheck.map(e => ({
-      ...e,
-      documents: findGraphqlDocuments(e.content)
-    }));
+    if (!schemaPath) {
+      // TODO: Complain about lack of out
+      this.log("You need to provide schema");
+      this.exit(1);
+    }
 
     if (!out) {
       // TODO: Complain about lack of out
+      this.log("You need to provide out");
+      this.exit(1);
     }
 
-    // TODO: Find graphql documents from files
-    // TODO: print types from docs at out
+    const filesToCheck = await readFiles(files);
+    const documents: Document[] = filesToCheck.map(e => ({
+      ...e,
+      documents: findGraphqlDocuments(e.content)
+    }));
+    const schema = await parseSchema(schemaPath);
+    const output = generateTypes(documents, schema);
+    console.log(output);
+
+    // TODO: Write output to file
   }
 }
 

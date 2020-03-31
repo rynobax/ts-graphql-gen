@@ -1,8 +1,10 @@
 import glob from "glob";
+import { join } from 'path';
 import { readFile as readFileNode } from "fs";
 import { promisify } from "util";
 import { parse } from "@babel/parser";
 import traverse, { NodePath } from "@babel/traverse";
+import { buildSchema } from 'graphql';
 
 const readFile = promisify(readFileNode);
 
@@ -46,4 +48,11 @@ export function findGraphqlDocuments(content: string): string[] {
     }
   });
   return docs;
+}
+
+export async function parseSchema(path: string) {
+  // TODO: Also handle JSON schema?
+  const file = await readFile(path);
+  const schema = buildSchema(String(file));
+  return schema;
 }
