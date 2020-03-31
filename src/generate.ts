@@ -14,14 +14,18 @@ import { capitalize } from "lodash";
 import { Document, SchemaTypeMap, SchemaValue } from "./types";
 import { computeSchemaTypeMap } from "./typeMap";
 
-export function generateTypesString(documents: Document[], schemaText: string) {
+export function generateTypesString(
+  documents: Document[],
+  schemaText: string
+): string {
   const typeMap = computeSchemaTypeMap(parse(schemaText));
   const schema = buildSchema(schemaText);
-  return documents
+  const result = documents
     .map((doc) => {
       return docToString(doc, typeMap, schema);
     })
     .join(EOL);
+  return result;
 }
 
 interface ThingyError {
@@ -32,7 +36,7 @@ function docToString(
   document: Document,
   typeMap: SchemaTypeMap,
   schema: GraphQLSchema
-) {
+): string {
   const { content } = document;
   const documentNode = parse(content);
   const validationErrors = validate(schema, documentNode);
@@ -44,15 +48,16 @@ function docToString(
   const errors: ThingyError[] = [];
   const result = documentNode.definitions.map((node) => {
     try {
-      return nodeToString(node, typeMap, []);
+      const res = nodeToString(node, typeMap, []);
+      return res;
     } catch (err) {
       errors.push(err);
       return "";
     }
   });
 
-  if (errors.length === 0) return result;
-  else reportErrors(errors, document);
+  if (errors.length === 0) return result.join(EOL);
+  else return reportErrors(errors, document);
 }
 
 function reportErrors(errors: ThingyError[], document: Document) {
@@ -60,6 +65,7 @@ function reportErrors(errors: ThingyError[], document: Document) {
   errorMsg += errors.map((e) => `  - ${e.message}`).join("\n");
   console.error(errorMsg);
   process.exit(1);
+  return "";
 }
 
 function nodeToString(
@@ -85,9 +91,9 @@ function operationToString(
   const suffix = capitalize(node.operation);
   const fullName = name + suffix;
 
-  const selectionText = node.selectionSet.selections.map((sel) =>
-    selectionToString(sel, typeMap, [...history, suffix])
-  );
+  const selectionText = node.selectionSet.selections
+    .map((sel) => selectionToString(sel, typeMap, [...history, suffix]))
+    .join(EOL);
 
   return `
   type ${fullName} = {
@@ -118,9 +124,9 @@ function fieldToString(
   const name = node.name.value;
   const newHistory = [...history, name];
   if (node.selectionSet) {
-    const selectionText = node.selectionSet.selections.map((sel) =>
-      selectionToString(sel, typeMap, newHistory)
-    );
+    const selectionText = node.selectionSet.selections
+      .map((sel) => selectionToString(sel, typeMap, newHistory))
+      .join(EOL);
     return `${name}: {
       ${selectionText}
     }`;
@@ -129,7 +135,10 @@ function fieldToString(
   }
 }
 
-function resolveTSTypeFromMap(typeMap: SchemaTypeMap, history: string[]) {
+function resolveTSTypeFromMap(
+  typeMap: SchemaTypeMap,
+  history: string[]
+): string {
   let last: SchemaTypeMap[string] | null = null;
   let lastValue: SchemaValue | null = null;
   history.forEach((k) => {

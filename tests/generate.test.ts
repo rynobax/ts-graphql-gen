@@ -14,6 +14,8 @@ type Query {
 
 type User {
   id: String!
+  bio: String
+  logins: [Int!]!
 }
 `;
 
@@ -25,14 +27,43 @@ const doc = (content: string): Document => ({
 const fmt = (str: string) => prettierFormat(str, { parser: "typescript" });
 
 describe("generateTypes", () => {
-  test.each<[string, string[], string, string]>([
-    [
-      "basic",
+  const runTest = (queries: string[], result: string, schema: string) => {
+    expect(fmt(generateTypesString(queries.map(doc), schema))).toEqual(
+      fmt(result)
+    );
+  };
+
+  test.only("basic", () => {
+    runTest(
+      [
+        `
+      query Me {
+        me {
+          id
+          bio
+        }
+      }`,
+      ],
+      `
+    type MeQuery = {
+      __typename: 'Query';
+      me: {
+        id: string;
+        bio: string | null;
+      }
+    }
+    `,
+      userSchema
+    );
+  });
+
+  test("list", () => {
+    runTest(
       [
         `
         query Me {
           me {
-            id
+            logins
           }
         }`,
       ],
@@ -40,15 +71,11 @@ describe("generateTypes", () => {
       type MeQuery = {
         __typename: 'Query';
         me: {
-          id: string;
+          logins: Array<number>;
         }
       }
       `,
-      userSchema,
-    ],
-  ])("%s", (_title, queries, result, schema) => {
-    expect(fmt(generateTypesString(queries.map(doc), schema))).toEqual(
-      fmt(result)
+      userSchema
     );
   });
 });
