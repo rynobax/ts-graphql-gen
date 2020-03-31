@@ -6,10 +6,30 @@
   "author": "Ryan Baxley <ryan.baxley1@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "watch": "tsc -w"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.9.0",
+    "@babel/preset-typescript": "^7.9.0",
+    "@types/jest": "^25.1.4",
+    "husky": "^4.2.3",
     "jest": "^25.2.4",
+    "lint-staged": "^10.1.1",
+    "prettier": "^2.0.2",
     "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "@oclif/command": "^1.5.19",
+    "@oclif/config": "^1.14.0",
+    "@oclif/plugin-help": "^2.2.3"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,css,md}": "prettier --write"
   }
 }
