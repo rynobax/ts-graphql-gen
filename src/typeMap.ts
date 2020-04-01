@@ -1,6 +1,6 @@
 import { ListTypeNode, FieldDefinitionNode, DocumentNode } from "graphql";
 
-import { SchemaType, SchemaTypeMap } from "./types";
+import { SchemaType, SchemaTypeMap, History } from "./types";
 
 function getListSchemaValue(
   node: ListTypeNode,
@@ -79,18 +79,15 @@ export function computeSchemaTypeMap(document: DocumentNode) {
 
 export function findCurrentTypeInMap(
   typeMap: SchemaTypeMap,
-  history: string[]
+  history: History
 ): SchemaType {
-  let last: SchemaTypeMap[string] | null = null;
+  let last: SchemaTypeMap[string] = typeMap[history.root];
   let lastValue: SchemaType | null = null;
-  history.forEach((k) => {
-    if (last) {
-      lastValue = last[k];
-      last = typeMap[lastValue.value];
-    } else {
-      last = typeMap[k];
-    }
+  history.steps.forEach((k) => {
+    if (!last[k]) throw Error(`Missing field ${k} in type ${lastValue?.value}`);
+    lastValue = last[k];
+    last = typeMap[lastValue.value];
   });
-  if (!lastValue) throw Error();
+  if (!lastValue) throw Error("Missing lastValue");
   return lastValue;
 }

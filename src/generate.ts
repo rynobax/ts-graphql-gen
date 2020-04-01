@@ -17,6 +17,7 @@ import {
   SchemaTypeMap,
   OperationPrintTree,
   PrintTreeLeaf,
+  History,
 } from "./types";
 import { computeSchemaTypeMap, findCurrentTypeInMap } from "./typeMap";
 import { treeToString } from "./print";
@@ -68,7 +69,7 @@ function docToTrees(
     try {
       switch (node.kind) {
         case "OperationDefinition":
-          return operationToTree(node, typeMap, fragments, []);
+          return operationToTree(node, typeMap, fragments);
         case "FragmentDefinition":
           // TODO: Maybe write these out someday
           return null;
@@ -90,8 +91,7 @@ function docToTrees(
 function operationToTree(
   node: OperationDefinitionNode,
   typeMap: SchemaTypeMap,
-  fragments: FragmentDefinitionNode[],
-  history: string[]
+  fragments: FragmentDefinitionNode[]
 ): OperationPrintTree {
   if (!node.name) throw Error(`Found a ${node.operation} without a name`);
   const name = node.name.value;
@@ -101,7 +101,16 @@ function operationToTree(
     operationType: suffix,
     leafs: flatMap(
       node.selectionSet.selections.map((node) =>
-        nodeToLeafs(node, typeMap, fragments, [...history, suffix])
+        nodeToLeafs(
+          node,
+          typeMap,
+          fragments,
+          {
+            root: suffix,
+            steps: [],
+          },
+          null
+        )
       )
     ),
   };
@@ -111,11 +120,12 @@ function nodeToLeafs(
   node: SelectionNode,
   typeMap: SchemaTypeMap,
   fragments: FragmentDefinitionNode[],
-  history: string[]
+  history: History,
+  condition: string | null
 ): PrintTreeLeaf[] {
   switch (node.kind) {
     case "Field":
-      return [fieldToLeaf(node, typeMap, fragments, history)];
+      return [fieldToLeaf(node, typeMap, fragments, history, condition)];
     case "FragmentSpread":
       // With a fragment, we lookup the fragment, then render it's selections
       const fragmentName = node.name.value;
@@ -124,11 +134,20 @@ function nodeToLeafs(
         throw Error(`Could not find fragment definition ${fragmentName}`);
       return flatMap(
         fragment.selectionSet.selections.map((s) =>
-          nodeToLeafs(s, typeMap, fragments, history)
+          nodeToLeafs(s, typeMap, fragments, history, condition)
         )
       );
-    default:
-      throw Error(`Unimplemented selection kind ${node.kind}`);
+    case "InlineFragment":
+      // An inline fragment is for an interface or union
+      // They are conditional
+      if (!node.typeCondition)
+        throw Error("Inline fragment with no typeCondition");
+      const newCondition = node.typeCondition.name.value;
+      return flatMap(
+        node.selectionSet.selections.map((s) =>
+          nodeToLeafs(s, typeMap, fragments, history, newCondition)
+        )
+      );
   }
 }
 
@@ -136,10 +155,14 @@ function fieldToLeaf(
   node: FieldNode,
   typeMap: SchemaTypeMap,
   fragments: FragmentDefinitionNode[],
-  history: string[]
+  history: History,
+  condition: string | null
 ): PrintTreeLeaf {
   const name = node.name.value;
-  const newHistory = [...history, name];
+  const newHistory = condition
+    ? { root: condition, steps: [name] }
+    : { ...history, steps: [...history.steps, name] };
+  // cant just use field names, because we need to know which route we are going down
   const currentType = findCurrentTypeInMap(typeMap, newHistory);
   if (node.selectionSet) {
     // Field is an object type, and will have children leafs
@@ -148,7 +171,7 @@ function fieldToLeaf(
       type: currentType,
       leafs: flatMap(
         node.selectionSet.selections.map((n) =>
-          nodeToLeafs(n, typeMap, fragments, newHistory)
+          nodeToLeafs(n, typeMap, fragments, newHistory, null)
         )
       ),
     };

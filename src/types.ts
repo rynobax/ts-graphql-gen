@@ -32,3 +32,8 @@ export interface PrintTreeLeaf {
   // There is more than one if there are unions or interfaces involved
   leafs: PrintTreeLeaf[];
 }
+
+export interface History {
+  root: string;
+  steps: string[];
+}
