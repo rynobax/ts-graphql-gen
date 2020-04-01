@@ -15,6 +15,7 @@ import { capitalize, flatMap } from "lodash";
 import { Document, SchemaTypeMap } from "./types";
 import { computeSchemaTypeMap, findCurrentTypeInMap } from "./typeMap";
 import { listIfNecessary, graphqlTypeToTS } from "./print";
+import { reportErrors, ErrorWithMessage } from "./errors";
 
 export function generateTypesString(
   documents: Document[],
@@ -36,10 +37,6 @@ function isFragmentDefinition(
   return node.kind === "FragmentDefinition";
 }
 
-interface ThingyError {
-  message: string;
-}
-
 function docToString(
   document: Document,
   typeMap: SchemaTypeMap,
@@ -53,7 +50,7 @@ function docToString(
       validationErrors.map((e) => Error(`Invalid query: ${e.message}`)),
       document
     );
-  const errors: ThingyError[] = [];
+  const errors: ErrorWithMessage[] = [];
 
   const fragments = documentNode.definitions.filter(isFragmentDefinition);
 
@@ -69,14 +66,6 @@ function docToString(
 
   if (errors.length === 0) return result.join(EOL);
   else return reportErrors(errors, document);
-}
-
-function reportErrors(errors: ThingyError[], document: Document) {
-  let errorMsg = `Found the following errors when parsing the file '${document.file}'\n`;
-  errorMsg += errors.map((e) => `  - ${e.message}`).join("\n");
-  console.error(errorMsg);
-  process.exit(1);
-  return "";
 }
 
 function topLevelToString(
