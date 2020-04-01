@@ -104,6 +104,60 @@ describe.only("computeSchemaTypeMap", () => {
         },
       },
     ],
+    [
+      "inferface",
+      `
+      schema {
+        query: Query
+      }
+      
+      type Query {
+        animal: Animal!
+      }
+      
+      interface Animal {
+        id: String!
+      }
+      
+      type Dog implements Animal {
+        id: String!
+        barks: Boolean!
+      }
+      
+      type Cat implements Animal {
+        id: String!
+        meows: Boolean!
+      }
+      `,
+      {
+        Query: {
+          fields: {
+            animal: { value: "Animal", nullable: false, list: false },
+          },
+        },
+        Animal: {
+          interfaces: {
+            Dog: true,
+            Cat: true,
+          },
+          fields: {
+            id: { value: "String", nullable: false, list: false },
+          },
+        },
+        Dog: {
+          fields: {
+            id: { value: "String", nullable: false, list: false },
+            barks: { value: "Boolean", nullable: false, list: false },
+          },
+        },
+        Cat: {
+          fields: {
+            id: { value: "String", nullable: false, list: false },
+            meows: { value: "Boolean", nullable: false, list: false },
+          },
+        },
+      },
+    ],
   ])("%s", (_title, schema, result) => {
     expect(computeSchemaTypeMap(parse(schema))).toEqual(result);
   });
