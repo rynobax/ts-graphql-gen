@@ -59,15 +59,26 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         break;
       case "ObjectTypeDefinition":
       case "InterfaceTypeDefinition":
+      case "UnionTypeDefinition":
         const name = def.name.value;
-        if (schema[name]) {
-          // TODO: test this
-          throw Error(`Duplicate name ${name}`);
-        }
-        schema[name] = {
-          fields: {},
-        };
+        if (!schema[name]) schema[name] = { fields: {} };
 
+        // Objects and Interfaces
+        if ("fields" in def && def.fields && def.fields.length > 0) {
+          if (Object.keys(schema[name].fields).length > 0) {
+            // An implementing type may already have created the structure,
+            // but the type fields should only be set once, so if this happens
+            // the schema has a duplicate type name
+            throw Error(`Duplicate type name ${name}`);
+          }
+
+          def.fields.forEach((field) => {
+            const key = field.name.value;
+            schema[name].fields[key] = getFieldSchemaValue(field);
+          });
+        }
+
+        // Interfaces
         if (
           "interfaces" in def &&
           def.interfaces &&
@@ -75,6 +86,7 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         ) {
           def.interfaces.forEach((i) => {
             const ifType = i.name.value;
+            if (!schema[ifType]) schema[ifType] = { fields: {} };
             schema[ifType].interfaces = {
               ...schema[ifType].interfaces,
               [name]: true,
@@ -82,10 +94,17 @@ export function computeSchemaTypeMap(document: DocumentNode) {
           });
         }
 
-        def.fields?.forEach((field) => {
-          const key = field.name.value;
-          schema[name].fields[key] = getFieldSchemaValue(field);
-        });
+        // Unions
+        if ("types" in def && def.types && def.types.length > 0) {
+          def.types.forEach((i) => {
+            const ifType = i.name.value;
+            if (!schema[ifType]) schema[ifType] = { fields: {} };
+            schema[ifType].interfaces = {
+              ...schema[ifType].interfaces,
+              [name]: true,
+            };
+          });
+        }
         return;
       default:
         throw Error(`Unknown kind parsing schema: ${def.kind}`);

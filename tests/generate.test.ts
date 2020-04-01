@@ -428,6 +428,64 @@ describe("generateTypes", () => {
       interfaceSchema
     );
   });
+
+  const unionSchema = `
+  schema {
+    query: Query
+  }
+
+  type Query {
+    animal: Animal!
+  }
+
+  union Animal = Dog | Cat
+
+  type Dog {
+    id: String!
+    barks: Boolean!
+  }
+
+  type Cat {
+    id: String!
+    meows: Boolean!
+  }
+  `;
+
+  test("union basic", () => {
+    runTest(
+      [
+        `
+      query Animal {
+        animal {
+          ... on Dog {
+            id
+            barks
+          }
+          ... on Cat {
+            id
+            meows
+          }
+        }
+      }
+      `,
+      ],
+      `
+    type AnimalQuery = {
+      __typename: 'Query';
+      animal: {
+        __typename: 'Dog';
+        id: string;
+        barks: boolean;
+      } | {
+        __typename: 'Cat';
+        id: string;
+        meows: boolean;
+      }
+    }
+    `,
+      unionSchema
+    );
+  });
 });
 
 // TODO: Test multiple documents

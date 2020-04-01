@@ -25,8 +25,9 @@ function leafsToString(leafs: PrintTreeLeaf[]) {
 }
 
 function leafToString(leaf: PrintTreeLeaf): string {
-  // TODO: Does condition play into uniqueness?
-  const leafs = uniqBy(leaf.leafs, (l) => l.key);
+  // Remove duplicate fields
+  // A field is a duplicate if it has the same key and condition
+  const leafs = uniqBy(leaf.leafs, (l) => `${l.key} | ${l.condition}`);
   if (leafs.length > 0) {
     // object field
     const conditions = uniq(leafs.map((l) => l.condition).filter(nonNull));
