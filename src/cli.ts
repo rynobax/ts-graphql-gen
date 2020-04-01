@@ -1,5 +1,6 @@
 import { Command, flags } from "@oclif/command";
 import { flatMap } from "lodash";
+import { format } from "prettier";
 
 import { readFiles, findGraphqlDocuments, readSchema } from "./parse";
 import { generateTypesString } from "./generate";
@@ -54,7 +55,7 @@ class CLI extends Command {
     const schemaText = await readSchema(schemaPath);
     const output = generateTypesString(documents, schemaText);
 
-    console.log(output);
+    console.log(format(output, { parser: "typescript" }));
 
     // TODO: Write output to file
   }

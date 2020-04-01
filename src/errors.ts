@@ -8,6 +8,7 @@ export function reportErrors(errors: ErrorWithMessage[], document: Document) {
   let errorMsg = `Found the following errors when parsing the file '${document.file}'\n`;
   errorMsg += errors.map((e) => `  - ${e.message}\n${e.stack}`).join("\n");
   console.error(errorMsg);
+  if (process.env.NODE_ENV === "test") throw Error();
   process.exit(1);
   return null as any;
 }

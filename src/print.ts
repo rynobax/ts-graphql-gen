@@ -12,7 +12,7 @@ export function treeToString(tree: OperationPrintTree): string {
   const suffix = tree.operationType;
   const fullName = name + suffix;
 
-  console.dir(tree.leafs[0].leafs[0], { depth: 9 });
+  // console.dir(tree, {depth: 9});
 
   return `
   type ${fullName} = {
@@ -32,7 +32,10 @@ function leafToString(leaf: PrintTreeLeaf): string {
   const leafs = mergeLeafs(leaf.leafs);
   if (leafs.length > 0) {
     // object field
-    const conditions = uniq(leafs.map((l) => l.condition).filter(nonNull));
+    // Important that we don't use the merged leafs, because we want to
+    // include the __typename for a interface even if we aren't getting
+    // any of it's fields
+    const conditions = uniq(leaf.leafs.map((l) => l.condition).filter(nonNull));
     if (conditions.length > 0) {
       // Multiple possible types
       // TODO: Can the two types be null and Something?
@@ -78,7 +81,12 @@ function mergeLeafs(leafs: PrintTreeLeaf[]): PrintTreeLeaf[] {
     if (!map[leafKey]) map[leafKey] = leaf;
     else map[leafKey].leafs.push(...leaf.leafs);
   });
-  return Object.values(map);
+  let merged = Object.values(map);
+
+  // We render __typename differently from other types, so removeit
+  merged = merged.filter((l) => l.key !== "__typename");
+
+  return merged;
 }
 
 const getLeafKey = (l: PrintTreeLeaf) => `${l.key} | ${l.condition}`;
@@ -102,7 +110,8 @@ function graphqlTypeToTS(v: SchemaType): string {
       res = "string";
       break;
     default:
-      throw Error(`Unknown GraphQL scalar ${v.value}`);
+      res = v.value;
+      break;
   }
 
   if (v.nullable) res += " | null";

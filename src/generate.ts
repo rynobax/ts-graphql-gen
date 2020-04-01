@@ -151,6 +151,11 @@ function nodeToLeafs(
   }
 }
 
+const TYPENAME: SelectionNode = {
+  kind: "Field",
+  name: { kind: "Name", value: "__typename" },
+};
+
 function fieldToLeaf(
   node: FieldNode,
   typeMap: SchemaTypeMap,
@@ -160,27 +165,29 @@ function fieldToLeaf(
 ): PrintTreeLeaf[] {
   const name = node.name.value;
 
-  // We already always include typename, so just ignore it
-  if (name === "__typename") return [];
-
   const newHistory = condition
     ? { root: condition, steps: [name] }
     : { ...history, steps: [...history.steps, name] };
   // cant just use field names, because we need to know which route we are going down
   const currentType = findCurrentTypeInMap(typeMap, newHistory);
+  const typeInfo = typeMap[currentType.value];
   if (node.selectionSet) {
     // Field is an object type, and will have children leafs
     return [
       {
         key: name,
         type: currentType,
-        typeInfo: typeMap[currentType.value],
+        typeInfo,
         condition,
-        leafs: flatMap(
-          node.selectionSet.selections.map((n) =>
+        leafs: flatMap([
+          // Insert typename at top
+          ...Object.keys(typeInfo.implementors || {}).map((cond) =>
+            nodeToLeafs(TYPENAME, typeMap, fragments, newHistory, cond)
+          ),
+          ...node.selectionSet.selections.map((n) =>
             nodeToLeafs(n, typeMap, fragments, newHistory, null)
-          )
-        ),
+          ),
+        ]),
       },
     ];
   } else {

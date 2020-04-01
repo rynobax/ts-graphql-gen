@@ -545,7 +545,7 @@ describe("generateTypes", () => {
       
       type Cat {
         age: Age!
-      }      
+      }
       `,
       [
         `
@@ -584,17 +584,17 @@ describe("generateTypes", () => {
       __typename: 'Query';
       animal: {
         __typename: 'Animal';
-        type: {
-          __typename: 'Cat';
-        } | {
+        type:  {
           __typename: 'Dog';
-          age: {
-            __typename: 'Unknown';
-          } | {
+          age:  {
             __typename: 'Known';
             years: number;
             months: number;
+          } | {
+            __typename: 'Unknown';
           }
+        } | {
+          __typename: 'Cat';
         }
       }
     }

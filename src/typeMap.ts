@@ -52,7 +52,14 @@ function getFieldSchemaValue(field: FieldDefinitionNode): SchemaType {
 }
 
 export function computeSchemaTypeMap(document: DocumentNode) {
-  const schema: SchemaTypeMap = {};
+  const typeMap: SchemaTypeMap = {};
+
+  function initializeType(typeName: string) {
+    typeMap[typeName] = {
+      fields: {},
+    };
+  }
+
   document.definitions.forEach((def) => {
     switch (def.kind) {
       case "SchemaDefinition":
@@ -61,11 +68,12 @@ export function computeSchemaTypeMap(document: DocumentNode) {
       case "InterfaceTypeDefinition":
       case "UnionTypeDefinition":
         const name = def.name.value;
-        if (!schema[name]) schema[name] = { fields: {} };
+
+        if (!typeMap[name]) initializeType(name);
 
         // Objects and Interfaces
         if ("fields" in def && def.fields && def.fields.length > 0) {
-          if (Object.keys(schema[name].fields).length > 0) {
+          if (Object.keys(typeMap[name].fields).length > 1) {
             // An implementing type may already have created the structure,
             // but the type fields should only be set once, so if this happens
             // the schema has a duplicate type name
@@ -74,7 +82,7 @@ export function computeSchemaTypeMap(document: DocumentNode) {
 
           def.fields.forEach((field) => {
             const key = field.name.value;
-            schema[name].fields[key] = getFieldSchemaValue(field);
+            typeMap[name].fields[key] = getFieldSchemaValue(field);
           });
         }
 
@@ -84,24 +92,40 @@ export function computeSchemaTypeMap(document: DocumentNode) {
           def.interfaces &&
           def.interfaces.length > 0
         ) {
-          def.interfaces.forEach((i) => {
-            const ifType = i.name.value;
-            if (!schema[ifType]) schema[ifType] = { fields: {} };
-            schema[ifType].interfaces = {
-              ...schema[ifType].interfaces,
+          def.interfaces.forEach((type) => {
+            const ifName = type.name.value;
+            if (!typeMap[ifName]) initializeType(ifName);
+
+            // Add interfaces this implements
+            typeMap[ifName].interfaces = {
+              ...typeMap[ifName].interfaces,
               [name]: true,
+            };
+
+            // Keep track of what implements this type
+            typeMap[name].implementors = {
+              ...typeMap[name].implementors,
+              [ifName]: true,
             };
           });
         }
 
         // Unions
         if ("types" in def && def.types && def.types.length > 0) {
-          def.types.forEach((i) => {
-            const ifType = i.name.value;
-            if (!schema[ifType]) schema[ifType] = { fields: {} };
-            schema[ifType].interfaces = {
-              ...schema[ifType].interfaces,
+          def.types.forEach((type) => {
+            const uName = type.name.value;
+            if (!typeMap[uName]) initializeType(uName);
+
+            // Add interfaces this implements
+            typeMap[uName].interfaces = {
+              ...typeMap[uName].interfaces,
               [name]: true,
+            };
+
+            // Keep track of what implements this type
+            typeMap[name].implementors = {
+              ...typeMap[name].implementors,
+              [uName]: true,
             };
           });
         }
@@ -110,20 +134,48 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         throw Error(`Unknown kind parsing schema: ${def.kind}`);
     }
   });
-  return schema;
+  return typeMap;
 }
 
 export function findCurrentTypeInMap(
   typeMap: SchemaTypeMap,
   history: History
 ): SchemaType {
+  if (history.steps[history.steps.length - 1] === "__typename")
+    return { value: "THIS_SHOULD_NOT_BE_USED", list: false, nullable: false };
+
   let last: SchemaTypeMap[string] = typeMap[history.root];
   let lastValue: SchemaType | null = null;
   history.steps.forEach((k) => {
-    if (!last.fields[k])
-      throw Error(`Missing field ${k} in type ${lastValue?.value}`);
-    lastValue = last.fields[k];
-    last = typeMap[lastValue.value];
+    if (k === "__typename") {
+      // __typename is special, we know what it should be from the last step
+      if (!last) throw Error(`__typename type requires last`);
+      if (!lastValue) throw Error(`__typename type requires lastValue`);
+
+      if (last.interfaces) {
+        // For interface, it's the union of all possible interfaces
+        lastValue = {
+          value: Object.keys(last.interfaces)
+            .map((e) => `"${e}"`)
+            .join(" | "),
+          nullable: false,
+          list: false,
+        };
+      } else {
+        // For non interface, it's the type of the parent
+        lastValue = {
+          value: `"${lastValue.value}"`,
+          nullable: false,
+          list: false,
+        };
+      }
+    } else {
+      // Normal fields
+      if (!last.fields[k])
+        throw Error(`Missing field ${k} in type ${lastValue?.value}`);
+      lastValue = last.fields[k];
+      last = typeMap[lastValue.value];
+    }
   });
   if (!lastValue) throw Error("Missing lastValue");
   return lastValue;
