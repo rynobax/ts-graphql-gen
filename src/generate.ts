@@ -125,7 +125,7 @@ function nodeToLeafs(
 ): PrintTreeLeaf[] {
   switch (node.kind) {
     case "Field":
-      return [fieldToLeaf(node, typeMap, fragments, history, condition)];
+      return fieldToLeaf(node, typeMap, fragments, history, condition);
     case "FragmentSpread":
       // With a fragment, we lookup the fragment, then render it's selections
       const fragmentName = node.name.value;
@@ -157,8 +157,12 @@ function fieldToLeaf(
   fragments: FragmentDefinitionNode[],
   history: History,
   condition: string | null
-): PrintTreeLeaf {
+): PrintTreeLeaf[] {
   const name = node.name.value;
+
+  // We already always include typename, so just ignore it
+  if (name === "__typename") return [];
+
   const newHistory = condition
     ? { root: condition, steps: [name] }
     : { ...history, steps: [...history.steps, name] };
@@ -166,25 +170,29 @@ function fieldToLeaf(
   const currentType = findCurrentTypeInMap(typeMap, newHistory);
   if (node.selectionSet) {
     // Field is an object type, and will have children leafs
-    return {
-      key: name,
-      type: currentType,
-      typeInfo: typeMap[currentType.value],
-      condition,
-      leafs: flatMap(
-        node.selectionSet.selections.map((n) =>
-          nodeToLeafs(n, typeMap, fragments, newHistory, null)
-        )
-      ),
-    };
+    return [
+      {
+        key: name,
+        type: currentType,
+        typeInfo: typeMap[currentType.value],
+        condition,
+        leafs: flatMap(
+          node.selectionSet.selections.map((n) =>
+            nodeToLeafs(n, typeMap, fragments, newHistory, null)
+          )
+        ),
+      },
+    ];
   } else {
     // Field is a scalar
-    return {
-      key: name,
-      type: currentType,
-      typeInfo: typeMap[currentType.value],
-      condition,
-      leafs: [],
-    };
+    return [
+      {
+        key: name,
+        type: currentType,
+        typeInfo: typeMap[currentType.value],
+        condition,
+        leafs: [],
+      },
+    ];
   }
 }

@@ -172,6 +172,30 @@ describe("generateTypes", () => {
     );
   });
 
+  test("__typename", () => {
+    runTest(
+      [
+        `
+      query Me {
+        me {
+          __typename
+          id
+        }
+      }`,
+      ],
+      `
+    type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        id: string;
+      }
+    }
+    `,
+      simpleSchema
+    );
+  });
+
   test("basic fragment", () => {
     runTest(
       [
