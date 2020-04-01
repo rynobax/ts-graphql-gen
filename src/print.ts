@@ -1,5 +1,5 @@
 import { EOL } from "os";
-import { uniq } from "lodash";
+import { uniq, uniqBy } from "lodash";
 
 import { SchemaType, OperationPrintTree, PrintTreeLeaf } from "./types";
 
@@ -25,30 +25,32 @@ function leafsToString(leafs: PrintTreeLeaf[]) {
 }
 
 function leafToString(leaf: PrintTreeLeaf): string {
-  if (leaf.leafs.length > 0) {
+  // TODO: Does condition play into uniqueness?
+  const leafs = uniqBy(leaf.leafs, (l) => l.key);
+  if (leafs.length > 0) {
     // object field
-    const conditions = uniq(leaf.leafs.map((l) => l.condition).filter(nonNull));
+    const conditions = uniq(leafs.map((l) => l.condition).filter(nonNull));
     if (conditions.length > 0) {
       // Multiple possible types
       // TODO: Can the two types be null and Something?
-      return conditions
+      // TODO: Is this going to work right with arrays?
+      const innerText = conditions
         .map((c) => {
-          const relevantLeafs = leaf.leafs.filter(
+          const relevantLeafs = leafs.filter(
             (e) => !e.condition || e.condition === c
           );
-          const innerText = `{
+          return `{
             __typename: "${c}";
             ${leafsToString(relevantLeafs)}
           }`;
-          return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
         })
         .join(` |${EOL}`);
-    }
-    {
+      return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
+    } else {
       // Single possible type
       const innerText = `{
         __typename: "${leaf.type.value}";
-        ${leafsToString(leaf.leafs)}
+        ${leafsToString(leafs)}
       }`;
       return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
     }

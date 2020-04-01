@@ -337,7 +337,7 @@ describe("generateTypes", () => {
   }
   `;
 
-  test.skip("interface no spread", () => {
+  test("interface no spread", () => {
     runTest(
       [
         `
@@ -391,7 +391,7 @@ describe("generateTypes", () => {
     );
   });
 
-  test.skip("interface spread", () => {
+  test("interface spread", () => {
     runTest(
       [
         `
@@ -416,12 +416,12 @@ describe("generateTypes", () => {
         __typename: 'Dog';
         id: string;
         fur: string;
-        barks: true;
+        barks: boolean;
       } | {
         __typename: 'Cat';
         id: string;
         fur: string;
-        meows: true;
+        meows: boolean;
       }
     }
     `,
