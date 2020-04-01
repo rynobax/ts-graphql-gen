@@ -1,5 +1,5 @@
 import { EOL } from "os";
-import { uniq, uniqBy } from "lodash";
+import { uniq } from "lodash";
 
 import { SchemaType, OperationPrintTree, PrintTreeLeaf } from "./types";
 
@@ -11,6 +11,8 @@ export function treeToString(tree: OperationPrintTree): string {
   const name = tree.name;
   const suffix = tree.operationType;
   const fullName = name + suffix;
+
+  console.dir(tree.leafs[0].leafs[0], { depth: 9 });
 
   return `
   type ${fullName} = {
@@ -25,9 +27,9 @@ function leafsToString(leafs: PrintTreeLeaf[]) {
 }
 
 function leafToString(leaf: PrintTreeLeaf): string {
-  // Remove duplicate fields
-  // A field is a duplicate if it has the same key and condition
-  const leafs = uniqBy(leaf.leafs, (l) => `${l.key} | ${l.condition}`);
+  // Some leafs may be the same field, but with different subfields selected,
+  // due to multiple fragments, so first we need to merge them
+  const leafs = mergeLeafs(leaf.leafs);
   if (leafs.length > 0) {
     // object field
     const conditions = uniq(leafs.map((l) => l.condition).filter(nonNull));
@@ -65,6 +67,21 @@ function leafToString(leaf: PrintTreeLeaf): string {
     return `${leaf.key}: ${graphqlTypeToTS(leaf.type)};`;
   }
 }
+
+// We merge leaf children that match by key fn, which looks at
+// name + condition.
+// This also removes duplicate fields
+function mergeLeafs(leafs: PrintTreeLeaf[]): PrintTreeLeaf[] {
+  const map: Record<string, PrintTreeLeaf> = {};
+  leafs.forEach((leaf) => {
+    const leafKey = getLeafKey(leaf);
+    if (!map[leafKey]) map[leafKey] = leaf;
+    else map[leafKey].leafs.push(...leaf.leafs);
+  });
+  return Object.values(map);
+}
+
+const getLeafKey = (l: PrintTreeLeaf) => `${l.key} | ${l.condition}`;
 
 function graphqlTypeToTS(v: SchemaType): string {
   let res = "";
