@@ -1,6 +1,11 @@
 import { EOL } from "os";
+import { uniq } from "lodash";
 
 import { SchemaType, OperationPrintTree, PrintTreeLeaf } from "./types";
+
+function nonNull<T>(e: T | null): e is T {
+  return e !== null;
+}
 
 export function treeToString(tree: OperationPrintTree): string {
   const name = tree.name;
@@ -22,11 +27,31 @@ function leafsToString(leafs: PrintTreeLeaf[]) {
 function leafToString(leaf: PrintTreeLeaf): string {
   if (leaf.leafs.length > 0) {
     // object field
-    const innerText = `{
-      __typename: "${leaf.type.value}";
-      ${leafsToString(leaf.leafs)}
-    }`;
-    return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
+    const conditions = uniq(leaf.leafs.map((l) => l.condition).filter(nonNull));
+    if (conditions.length > 0) {
+      // Multiple possible types
+      // TODO: Can the two types be null and Something?
+      return conditions
+        .map((c) => {
+          const relevantLeafs = leaf.leafs.filter(
+            (e) => !e.condition || e.condition === c
+          );
+          const innerText = `{
+            __typename: "${c}";
+            ${leafsToString(relevantLeafs)}
+          }`;
+          return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
+        })
+        .join(` |${EOL}`);
+    }
+    {
+      // Single possible type
+      const innerText = `{
+        __typename: "${leaf.type.value}";
+        ${leafsToString(leaf.leafs)}
+      }`;
+      return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
+    }
   } else {
     // scalar field
     return `${leaf.key}: ${graphqlTypeToTS(leaf.type)};`;
