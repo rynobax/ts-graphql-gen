@@ -1,6 +1,39 @@
-import { SchemaValue } from "./types";
+import { EOL } from "os";
 
-export function graphqlTypeToTS(v: SchemaValue): string {
+import { SchemaType, OperationPrintTree, PrintTreeLeaf } from "./types";
+
+export function treeToString(tree: OperationPrintTree): string {
+  const name = tree.name;
+  const suffix = tree.operationType;
+  const fullName = name + suffix;
+
+  return `
+  type ${fullName} = {
+    __typename: "${suffix}";
+    ${leafsToString(tree.leafs)}
+  }
+  `;
+}
+
+function leafsToString(leafs: PrintTreeLeaf[]) {
+  return leafs.map(leafToString).join(EOL);
+}
+
+function leafToString(leaf: PrintTreeLeaf): string {
+  if (leaf.leafs.length > 0) {
+    // object field
+    const innerText = `{
+      __typename: "${leaf.type.value}";
+      ${leafsToString(leaf.leafs)}
+    }`;
+    return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
+  } else {
+    // scalar field
+    return `${leaf.key}: ${graphqlTypeToTS(leaf.type)};`;
+  }
+}
+
+function graphqlTypeToTS(v: SchemaType): string {
   let res = "";
   switch (v.value) {
     case "Boolean":
@@ -32,7 +65,7 @@ export function graphqlTypeToTS(v: SchemaValue): string {
   return res;
 }
 
-export function listIfNecessary(v: SchemaValue, content: string) {
+function listIfNecessary(v: SchemaType, content: string) {
   if (!v.list) return content;
   if (v.list.nullable) {
     return `Array<${content} | null>`;

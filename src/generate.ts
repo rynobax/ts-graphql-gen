@@ -12,10 +12,19 @@ import {
 } from "graphql";
 import { capitalize, flatMap } from "lodash";
 
-import { Document, SchemaTypeMap } from "./types";
+import {
+  Document,
+  SchemaTypeMap,
+  OperationPrintTree,
+  PrintTreeLeaf,
+} from "./types";
 import { computeSchemaTypeMap, findCurrentTypeInMap } from "./typeMap";
-import { listIfNecessary, graphqlTypeToTS } from "./print";
+import { treeToString } from "./print";
 import { reportErrors, ErrorWithMessage } from "./errors";
+
+function nonNull<T>(e: T | null): e is T {
+  return e !== null;
+}
 
 export function generateTypesString(
   documents: Document[],
@@ -25,7 +34,8 @@ export function generateTypesString(
   const schema = buildSchema(schemaText);
   const result = documents
     .map((doc) => {
-      return docToString(doc, typeMap, schema);
+      const trees = docToTrees(doc, typeMap, schema);
+      return trees.filter(nonNull).map(treeToString).join(EOL);
     })
     .join(EOL);
   return result;
@@ -37,11 +47,11 @@ function isFragmentDefinition(
   return node.kind === "FragmentDefinition";
 }
 
-function docToString(
+function docToTrees(
   document: Document,
   typeMap: SchemaTypeMap,
   schema: GraphQLSchema
-): string {
+): Array<OperationPrintTree | null> {
   const { content } = document;
   const documentNode = parse(content);
   const validationErrors = validate(schema, documentNode);
@@ -56,70 +66,56 @@ function docToString(
 
   const result = documentNode.definitions.map((node) => {
     try {
-      const res = topLevelToString(node, typeMap, fragments, []);
-      return res;
+      switch (node.kind) {
+        case "OperationDefinition":
+          return operationToTree(node, typeMap, fragments, []);
+        case "FragmentDefinition":
+          // TODO: Maybe write these out someday
+          return null;
+        default:
+          throw Error(`Unimplemented node kind ${node.kind}`);
+      }
     } catch (err) {
       errors.push(err);
-      return "";
+      // We will be throwing in a sec if we reach here, so cast is fine
+      return null;
     }
   });
 
-  if (errors.length === 0) return result.join(EOL);
+  if (errors.length === 0) return result;
   else return reportErrors(errors, document);
 }
 
-function topLevelToString(
-  node: DefinitionNode,
-  typeMap: SchemaTypeMap,
-  fragments: FragmentDefinitionNode[],
-  history: string[]
-): string {
-  switch (node.kind) {
-    case "OperationDefinition":
-      return operationToString(node, typeMap, fragments, history);
-    case "FragmentDefinition":
-      // TODO: Maybe write these out someday
-      return "";
-    default:
-      throw Error(`Unimplemented node kind ${node.kind}`);
-  }
-}
-
 // A query, mutation, or subscription
-function operationToString(
+function operationToTree(
   node: OperationDefinitionNode,
   typeMap: SchemaTypeMap,
   fragments: FragmentDefinitionNode[],
   history: string[]
-): string {
+): OperationPrintTree {
   if (!node.name) throw Error(`Found a ${node.operation} without a name`);
   const name = node.name.value;
   const suffix = capitalize(node.operation);
-  const fullName = name + suffix;
-
-  const selectionText = node.selectionSet.selections
-    .map((sel) =>
-      selectionToString(sel, typeMap, fragments, [...history, suffix]).join(EOL)
-    )
-    .join(EOL);
-
-  return `
-  type ${fullName} = {
-    __typename: "${suffix}";
-    ${selectionText}
-  }
-  `;
+  return {
+    name,
+    operationType: suffix,
+    leafs: flatMap(
+      node.selectionSet.selections.map((node) =>
+        nodeToLeafs(node, typeMap, fragments, [...history, suffix])
+      )
+    ),
+  };
 }
 
-function selectionToString(
+function nodeToLeafs(
   node: SelectionNode,
   typeMap: SchemaTypeMap,
   fragments: FragmentDefinitionNode[],
   history: string[]
-): string[] {
+): PrintTreeLeaf[] {
   switch (node.kind) {
     case "Field":
-      return [fieldToString(node, typeMap, fragments, history)];
+      return [fieldToLeaf(node, typeMap, fragments, history)];
     case "FragmentSpread":
       // With a fragment, we lookup the fragment, then render it's selections
       const fragmentName = node.name.value;
@@ -128,7 +124,7 @@ function selectionToString(
         throw Error(`Could not find fragment definition ${fragmentName}`);
       return flatMap(
         fragment.selectionSet.selections.map((s) =>
-          selectionToString(s, typeMap, fragments, history)
+          nodeToLeafs(s, typeMap, fragments, history)
         )
       );
     default:
@@ -136,33 +132,28 @@ function selectionToString(
   }
 }
 
-function fieldToString(
+function fieldToLeaf(
   node: FieldNode,
   typeMap: SchemaTypeMap,
   fragments: FragmentDefinitionNode[],
   history: string[]
-): string {
+): PrintTreeLeaf {
   const name = node.name.value;
   const newHistory = [...history, name];
   const currentType = findCurrentTypeInMap(typeMap, newHistory);
   if (node.selectionSet) {
-    const selections = flatMap(
-      node.selectionSet.selections.map((sel) =>
-        selectionToString(sel, typeMap, fragments, newHistory)
-      )
-    );
-    const uniqueSelections = selections.filter((e, i) => {
-      const getPrefix = (s: string) => s.trim().slice(0, s.indexOf(":"));
-      const prefix = getPrefix(e);
-      return selections.findIndex((s) => getPrefix(s) === prefix) === i;
-    });
-    const selectionText = uniqueSelections.join(EOL);
-    const innerText = `{
-      __typename: "${currentType.value}";
-      ${selectionText}
-    }`;
-    return `${name}: ${listIfNecessary(currentType, innerText)}`;
+    // Field is an object type, and will have children leafs
+    return {
+      key: name,
+      type: currentType,
+      leafs: flatMap(
+        node.selectionSet.selections.map((n) =>
+          nodeToLeafs(n, typeMap, fragments, newHistory)
+        )
+      ),
+    };
   } else {
-    return `${name}: ${graphqlTypeToTS(currentType)};`;
+    // Field is a scalar
+    return { key: name, type: currentType, leafs: [] };
   }
 }

@@ -11,5 +11,5 @@ export function reportErrors(errors: ErrorWithMessage[], document: Document) {
   errorMsg += errors.map((e) => `  - ${e.message}`).join("\n");
   console.error(errorMsg);
   process.exit(1);
-  return "";
+  return null as any;
 }

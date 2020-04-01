@@ -3,7 +3,7 @@ export interface Document {
   file: string;
 }
 
-export type SchemaValue = {
+export type SchemaType = {
   value: string;
   nullable: boolean;
   list: { nullable: boolean } | false;
@@ -11,6 +11,24 @@ export type SchemaValue = {
 
 export interface SchemaTypeMap {
   [type: string]: {
-    [field: string]: SchemaValue;
+    [field: string]: SchemaType;
   };
+}
+
+export interface OperationPrintTree {
+  // Name of the operation
+  name: string;
+  // Type of the operation (query, mutation, subscription)
+  operationType: string;
+  leafs: PrintTreeLeaf[];
+}
+
+export interface PrintTreeLeaf {
+  // The name of the type of this node
+  type: SchemaType;
+  // The graphql field name
+  key: string;
+  // The possible versions that could exist
+  // There is more than one if there are unions or interfaces involved
+  leafs: PrintTreeLeaf[];
 }
