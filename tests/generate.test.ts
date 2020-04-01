@@ -43,7 +43,7 @@ const doc = (content: string): Document => ({
 const fmt = (str: string) => prettierFormat(str, { parser: "typescript" });
 
 describe("generateTypes", () => {
-  const runTest = (queries: string[], result: string, schema: string) => {
+  const runTest = (schema: string, queries: string[], result: string) => {
     expect(fmt(generateTypesString(queries.map(doc), schema))).toEqual(
       fmt(result)
     );
@@ -51,6 +51,7 @@ describe("generateTypes", () => {
 
   test("basic", () => {
     runTest(
+      simpleSchema,
       [
         `
       query Me {
@@ -69,13 +70,13 @@ describe("generateTypes", () => {
         bio: string | null;
       }
     }
-    `,
-      simpleSchema
+    `
     );
   });
 
   test("list", () => {
     runTest(
+      simpleSchema,
       [
         `
         query Me {
@@ -92,13 +93,13 @@ describe("generateTypes", () => {
           logins: Array<number>;
         }
       }
-      `,
-      simpleSchema
+      `
     );
   });
 
   test("list combinations", () => {
     runTest(
+      simpleSchema,
       [
         `
         query ListTests {
@@ -121,13 +122,13 @@ describe("generateTypes", () => {
           listFour: Array<number| null> | null;
         }
       }
-      `,
-      simpleSchema
+      `
     );
   });
 
   test("nested users", () => {
     runTest(
+      simpleSchema,
       [
         `
       query MyFriends {
@@ -167,13 +168,13 @@ describe("generateTypes", () => {
         }>
       }
     }
-    `,
-      simpleSchema
+    `
     );
   });
 
   test("__typename", () => {
     runTest(
+      simpleSchema,
       [
         `
       query Me {
@@ -191,13 +192,13 @@ describe("generateTypes", () => {
         id: string;
       }
     }
-    `,
-      simpleSchema
+    `
     );
   });
 
   test("basic fragment", () => {
     runTest(
+      simpleSchema,
       [
         `
       query Me {
@@ -222,13 +223,13 @@ describe("generateTypes", () => {
         email: string | null;
       }
     }
-    `,
-      simpleSchema
+    `
     );
   });
 
   test("fragment with object", () => {
     runTest(
+      simpleSchema,
       [
         `
       query Me {
@@ -254,13 +255,13 @@ describe("generateTypes", () => {
         }>
       }
     }
-    `,
-      simpleSchema
+    `
     );
   });
 
   test("nested fragments", () => {
     runTest(
+      simpleSchema,
       [
         `
       query Me {
@@ -295,13 +296,13 @@ describe("generateTypes", () => {
         }>
       }
     }
-    `,
-      simpleSchema
+    `
     );
   });
 
   test("Duplicated fields", () => {
     runTest(
+      simpleSchema,
       [
         `
       query Me {
@@ -327,8 +328,7 @@ describe("generateTypes", () => {
         email: string | null;
       }
     }
-    `,
-      simpleSchema
+    `
     );
   });
 
@@ -363,6 +363,7 @@ describe("generateTypes", () => {
 
   test("interface no spread", () => {
     runTest(
+      interfaceSchema,
       [
         `
       query Dog {
@@ -384,13 +385,13 @@ describe("generateTypes", () => {
         barks: boolean;
       }
     }
-    `,
-      interfaceSchema
+    `
     );
   });
 
   test("interface no spread 2", () => {
     runTest(
+      interfaceSchema,
       [
         `
       query Animal {
@@ -410,13 +411,13 @@ describe("generateTypes", () => {
         fur: string;
       }
     }
-    `,
-      interfaceSchema
+    `
     );
   });
 
   test("interface spread", () => {
     runTest(
+      interfaceSchema,
       [
         `
       query Animal {
@@ -448,8 +449,7 @@ describe("generateTypes", () => {
         meows: boolean;
       }
     }
-    `,
-      interfaceSchema
+    `
     );
   });
 
@@ -477,6 +477,7 @@ describe("generateTypes", () => {
 
   test("union basic", () => {
     runTest(
+      unionSchema,
       [
         `
       query Animal {
@@ -506,8 +507,98 @@ describe("generateTypes", () => {
         meows: boolean;
       }
     }
-    `,
-      unionSchema
+    `
+    );
+  });
+
+  test("nested unions", () => {
+    runTest(
+      `
+      schema {
+        query: Query
+      }
+      
+      type Query {
+        animal: Animal!
+      }
+      
+      type Animal {
+        type: AnimalType!
+      }
+      
+      union AnimalType = Dog | Cat
+      
+      union Age = Known | Unknown
+      
+      type Known {
+        years: Int!
+        months: Int!
+      }
+      
+      type Unknown {
+        reason: String!
+      }
+      
+      type Dog {
+        age: Age!
+      }
+      
+      type Cat {
+        age: Age!
+      }      
+      `,
+      [
+        `
+        query GetAnimal {
+          animal {
+            type {
+              ... on Dog {
+                __typename
+                age {
+                  ... on Known {
+                    __typename
+                    years
+                  }
+                }
+              }
+              ...DogAge
+            }
+          }
+        }
+      
+        fragment DogAge on AnimalType {
+          ... on Dog {
+            __typename
+            age {
+              ... on Known {
+                __typename
+                months
+              }
+            }
+          }
+        }
+      `,
+      ],
+      `
+    type GetAnimalQuery = {
+      __typename: 'Query';
+      animal: {
+        __typename: 'Animal';
+        type: {
+          __typename: 'Cat';
+        } | {
+          __typename: 'Dog';
+          age: {
+            __typename: 'Unknown';
+          } | {
+            __typename: 'Known';
+            years: number;
+            months: number;
+          }
+        }
+      }
+    }
+    `
     );
   });
 });
