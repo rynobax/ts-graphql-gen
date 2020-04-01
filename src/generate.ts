@@ -59,7 +59,7 @@ function docToString(
 
   const result = documentNode.definitions.map((node) => {
     try {
-      const res = nodeToString(node, typeMap, fragments, []);
+      const res = topLevelToString(node, typeMap, fragments, []);
       return res;
     } catch (err) {
       errors.push(err);
@@ -79,7 +79,7 @@ function reportErrors(errors: ThingyError[], document: Document) {
   return "";
 }
 
-function nodeToString(
+function topLevelToString(
   node: DefinitionNode,
   typeMap: SchemaTypeMap,
   fragments: FragmentDefinitionNode[],
@@ -96,6 +96,7 @@ function nodeToString(
   }
 }
 
+// A query, mutation, or subscription
 function operationToString(
   node: OperationDefinitionNode,
   typeMap: SchemaTypeMap,

@@ -337,7 +337,7 @@ describe("generateTypes", () => {
   }
   `;
 
-  test("interface 1", () => {
+  test.skip("interface no spread", () => {
     runTest(
       [
         `
@@ -358,6 +358,70 @@ describe("generateTypes", () => {
         id: string;
         fur: string;
         barks: boolean;
+      }
+    }
+    `,
+      interfaceSchema
+    );
+  });
+
+  test.skip("interface no spread 2", () => {
+    runTest(
+      [
+        `
+      query Animal {
+        animal {
+          id
+          fur
+        }
+      }
+      `,
+      ],
+      `
+    type AnimalQuery = {
+      __typename: 'Query';
+      animal: {
+        __typename: 'Dog' | 'Cat';
+        id: string;
+        fur: string;
+      }
+    }
+    `,
+      interfaceSchema
+    );
+  });
+
+  test.skip("interface spread", () => {
+    runTest(
+      [
+        `
+      query Animal {
+        animal {
+          id
+          fur
+          ... on Dog {
+            barks
+          }
+          ... on Cat {
+            meows
+          }
+        }
+      }
+      `,
+      ],
+      `
+    type AnimalQuery = {
+      __typename: 'Query';
+      animal: {
+        __typename: 'Dog';
+        id: string;
+        fur: string;
+        barks: true;
+      } | {
+        __typename: 'Cat';
+        id: string;
+        fur: string;
+        meows: true;
       }
     }
     `,
