@@ -365,7 +365,7 @@ describe("generateTypes", () => {
     );
   });
 
-  test.skip("interface no spread 2", () => {
+  test("interface no spread 2", () => {
     runTest(
       [
         `

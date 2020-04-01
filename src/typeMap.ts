@@ -64,10 +64,27 @@ export function computeSchemaTypeMap(document: DocumentNode) {
           // TODO: test this
           throw Error(`Duplicate name ${name}`);
         }
-        schema[name] = {};
+        schema[name] = {
+          fields: {},
+        };
+
+        if (
+          "interfaces" in def &&
+          def.interfaces &&
+          def.interfaces.length > 0
+        ) {
+          def.interfaces.forEach((i) => {
+            const ifType = i.name.value;
+            schema[ifType].interfaces = {
+              ...schema[ifType].interfaces,
+              [name]: true,
+            };
+          });
+        }
+
         def.fields?.forEach((field) => {
           const key = field.name.value;
-          schema[name][key] = getFieldSchemaValue(field);
+          schema[name].fields[key] = getFieldSchemaValue(field);
         });
         return;
       default:
@@ -84,8 +101,9 @@ export function findCurrentTypeInMap(
   let last: SchemaTypeMap[string] = typeMap[history.root];
   let lastValue: SchemaType | null = null;
   history.steps.forEach((k) => {
-    if (!last[k]) throw Error(`Missing field ${k} in type ${lastValue?.value}`);
-    lastValue = last[k];
+    if (!last.fields[k])
+      throw Error(`Missing field ${k} in type ${lastValue?.value}`);
+    lastValue = last.fields[k];
     last = typeMap[lastValue.value];
   });
   if (!lastValue) throw Error("Missing lastValue");

@@ -48,8 +48,13 @@ function leafToString(leaf: PrintTreeLeaf): string {
       return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
     } else {
       // Single possible type
+      const typename = leaf.typeInfo.interfaces
+        ? Object.keys(leaf.typeInfo.interfaces)
+            .map((e) => `"${e}"`)
+            .join(" | ")
+        : `"${leaf.type.value}"`;
       const innerText = `{
-        __typename: "${leaf.type.value}";
+        __typename: ${typename};
         ${leafsToString(leafs)}
       }`;
       return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;

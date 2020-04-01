@@ -169,6 +169,7 @@ function fieldToLeaf(
     return {
       key: name,
       type: currentType,
+      typeInfo: typeMap[currentType.value],
       condition,
       leafs: flatMap(
         node.selectionSet.selections.map((n) =>
@@ -178,6 +179,12 @@ function fieldToLeaf(
     };
   } else {
     // Field is a scalar
-    return { key: name, type: currentType, condition, leafs: [] };
+    return {
+      key: name,
+      type: currentType,
+      typeInfo: typeMap[currentType.value],
+      condition,
+      leafs: [],
+    };
   }
 }

@@ -10,7 +10,14 @@ export type SchemaType = {
 };
 
 export interface SchemaTypeMap {
-  [type: string]: {
+  [type: string]: SchemaTypeInfo;
+}
+
+interface SchemaTypeInfo {
+  interfaces?: {
+    [implementingType: string]: boolean;
+  };
+  fields: {
     [field: string]: SchemaType;
   };
 }
@@ -26,6 +33,8 @@ export interface OperationPrintTree {
 export interface PrintTreeLeaf {
   // The name of the type of this node
   type: SchemaType;
+  // Information about the type of the node
+  typeInfo: SchemaTypeInfo;
   // The graphql field name
   key: string;
   // The possible versions that could exist

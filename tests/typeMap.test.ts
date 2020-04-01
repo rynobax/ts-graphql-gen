@@ -13,8 +13,10 @@ describe.only("computeSchemaTypeMap", () => {
       }`,
       {
         Query: {
-          foo: { value: "String", nullable: true, list: false },
-          bar: { value: "Int", nullable: false, list: false },
+          fields: {
+            foo: { value: "String", nullable: true, list: false },
+            bar: { value: "Int", nullable: false, list: false },
+          },
         },
       },
     ],
@@ -32,12 +34,20 @@ describe.only("computeSchemaTypeMap", () => {
       `,
       {
         Query: {
-          dog: { value: "Dog", nullable: false, list: false },
-          nullableDog: { value: "Dog", nullable: true, list: false },
-          dogList: { value: "Dog", nullable: false, list: { nullable: false } },
+          fields: {
+            dog: { value: "Dog", nullable: false, list: false },
+            nullableDog: { value: "Dog", nullable: true, list: false },
+            dogList: {
+              value: "Dog",
+              nullable: false,
+              list: { nullable: false },
+            },
+          },
         },
         Dog: {
-          weight: { value: "Int", nullable: false, list: false },
+          fields: {
+            weight: { value: "Int", nullable: false, list: false },
+          },
         },
       },
     ],
@@ -51,10 +61,12 @@ describe.only("computeSchemaTypeMap", () => {
       }`,
       {
         Query: {
-          one: { value: "Int", nullable: false, list: { nullable: false } },
-          two: { value: "Int", nullable: false, list: { nullable: true } },
-          three: { value: "Int", nullable: true, list: { nullable: false } },
-          four: { value: "Int", nullable: true, list: { nullable: true } },
+          fields: {
+            one: { value: "Int", nullable: false, list: { nullable: false } },
+            two: { value: "Int", nullable: false, list: { nullable: true } },
+            three: { value: "Int", nullable: true, list: { nullable: false } },
+            four: { value: "Int", nullable: true, list: { nullable: true } },
+          },
         },
       },
     ],
@@ -75,14 +87,20 @@ describe.only("computeSchemaTypeMap", () => {
       `,
       {
         Query: {
-          dog: { value: "Dog", nullable: false, list: false },
+          fields: {
+            dog: { value: "Dog", nullable: false, list: false },
+          },
         },
         Dog: {
-          size: { value: "Size", nullable: false, list: false },
+          fields: {
+            size: { value: "Size", nullable: false, list: false },
+          },
         },
         Size: {
-          length: { value: "Int", nullable: false, list: false },
-          weight: { value: "Int", nullable: false, list: false },
+          fields: {
+            length: { value: "Int", nullable: false, list: false },
+            weight: { value: "Int", nullable: false, list: false },
+          },
         },
       },
     ],
