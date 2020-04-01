@@ -15,11 +15,11 @@ export interface SchemaTypeMap {
 
 interface SchemaTypeInfo {
   // Types that implement this type
-  implementors?: {
+  typesThatImplementThis?: {
     [implementingType: string]: boolean;
   };
   // Types that this type implements
-  interfaces?: {
+  typesThatThisImplements?: {
     [implementedType: string]: boolean;
   };
   fields: {

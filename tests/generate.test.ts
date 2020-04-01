@@ -406,7 +406,11 @@ describe("generateTypes", () => {
     type AnimalQuery = {
       __typename: 'Query';
       animal: {
-        __typename: 'Dog' | 'Cat';
+        __typename: 'Dog';
+        id: string;
+        fur: string;
+      } | {
+        __typename: 'Cat';
         id: string;
         fur: string;
       }

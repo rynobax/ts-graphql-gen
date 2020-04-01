@@ -92,20 +92,21 @@ export function computeSchemaTypeMap(document: DocumentNode) {
           def.interfaces &&
           def.interfaces.length > 0
         ) {
-          def.interfaces.forEach((type) => {
-            const ifName = type.name.value;
-            if (!typeMap[ifName]) initializeType(ifName);
+          def.interfaces.forEach((intf) => {
+            const typeThatThisImplements = intf.name.value;
+            if (!typeMap[typeThatThisImplements])
+              initializeType(typeThatThisImplements);
 
-            // Add interfaces this implements
-            typeMap[ifName].interfaces = {
-              ...typeMap[ifName].interfaces,
-              [name]: true,
+            // Add interfaces that this implements
+            typeMap[name].typesThatThisImplements = {
+              ...typeMap[name].typesThatThisImplements,
+              [typeThatThisImplements]: true,
             };
 
-            // Keep track of what implements this type
-            typeMap[name].implementors = {
-              ...typeMap[name].implementors,
-              [ifName]: true,
+            // Add this to the interface it implements
+            typeMap[typeThatThisImplements].typesThatImplementThis = {
+              ...typeMap[typeThatThisImplements].typesThatImplementThis,
+              [name]: true,
             };
           });
         }
@@ -113,19 +114,20 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         // Unions
         if ("types" in def && def.types && def.types.length > 0) {
           def.types.forEach((type) => {
-            const uName = type.name.value;
-            if (!typeMap[uName]) initializeType(uName);
+            const typeThatThisIsImplementedBy = type.name.value;
+            if (!typeMap[typeThatThisIsImplementedBy])
+              initializeType(typeThatThisIsImplementedBy);
 
-            // Add interfaces this implements
-            typeMap[uName].interfaces = {
-              ...typeMap[uName].interfaces,
-              [name]: true,
+            // Add interfaces that this implements
+            typeMap[name].typesThatImplementThis = {
+              ...typeMap[name].typesThatImplementThis,
+              [typeThatThisIsImplementedBy]: true,
             };
 
-            // Keep track of what implements this type
-            typeMap[name].implementors = {
-              ...typeMap[name].implementors,
-              [uName]: true,
+            // Add this to the interface it implements
+            typeMap[typeThatThisIsImplementedBy].typesThatThisImplements = {
+              ...typeMap[typeThatThisIsImplementedBy].typesThatThisImplements,
+              [name]: true,
             };
           });
         }
@@ -134,6 +136,7 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         throw Error(`Unknown kind parsing schema: ${def.kind}`);
     }
   });
+  // console.log(typeMap);
   return typeMap;
 }
 
@@ -152,10 +155,10 @@ export function findCurrentTypeInMap(
       if (!last) throw Error(`__typename type requires last`);
       if (!lastValue) throw Error(`__typename type requires lastValue`);
 
-      if (last.interfaces) {
+      if (last.typesThatThisImplements) {
         // For interface, it's the union of all possible interfaces
         lastValue = {
-          value: Object.keys(last.interfaces)
+          value: Object.keys(last.typesThatThisImplements)
             .map((e) => `"${e}"`)
             .join(" | "),
           nullable: false,

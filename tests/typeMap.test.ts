@@ -136,7 +136,7 @@ describe.only("computeSchemaTypeMap", () => {
           },
         },
         Animal: {
-          interfaces: {
+          typesThatImplementThis: {
             Dog: true,
             Cat: true,
           },

@@ -181,7 +181,7 @@ function fieldToLeaf(
         condition,
         leafs: flatMap([
           // Insert typename at top
-          ...Object.keys(typeInfo.implementors || {}).map((cond) =>
+          ...Object.keys(typeInfo.typesThatImplementThis || {}).map((cond) =>
             nodeToLeafs(TYPENAME, typeMap, fragments, newHistory, cond)
           ),
           ...node.selectionSet.selections.map((n) =>

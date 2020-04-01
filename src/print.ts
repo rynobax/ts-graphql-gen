@@ -29,8 +29,8 @@ function leafsToString(leafs: PrintTreeLeaf[]) {
 function leafToString(leaf: PrintTreeLeaf): string {
   // Some leafs may be the same field, but with different subfields selected,
   // due to multiple fragments, so first we need to merge them
-  const leafs = mergeLeafs(leaf.leafs);
-  if (leafs.length > 0) {
+  if (leaf.leafs.length > 0) {
+    const leafs = mergeLeafs(leaf.leafs);
     // object field
     // Important that we don't use the merged leafs, because we want to
     // include the __typename for a interface even if we aren't getting
@@ -54,8 +54,8 @@ function leafToString(leaf: PrintTreeLeaf): string {
       return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
     } else {
       // Single possible type
-      const typename = leaf.typeInfo.interfaces
-        ? Object.keys(leaf.typeInfo.interfaces)
+      const typename = leaf.typeInfo.typesThatImplementThis
+        ? Object.keys(leaf.typeInfo.typesThatImplementThis)
             .map((e) => `"${e}"`)
             .join(" | ")
         : `"${leaf.type.value}"`;
