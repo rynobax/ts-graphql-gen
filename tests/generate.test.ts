@@ -66,8 +66,8 @@ describe("generateTypes", () => {
       __typename: 'Query';
       me: {
         __typename: 'User';
-        id: string;
         bio: string | null;
+        id: string;
       }
     }
     `
@@ -116,10 +116,10 @@ describe("generateTypes", () => {
         __typename: 'Query';
         testing: {
           __typename: 'Testing';
-          listOne: Array<number>;
-          listTwo: Array<number> | null;
-          listThree: Array<number | null>;
           listFour: Array<number| null> | null;
+          listOne: Array<number>;
+          listThree: Array<number | null>;
+          listTwo: Array<number> | null;
         }
       }
       `
@@ -152,20 +152,20 @@ describe("generateTypes", () => {
       __typename: 'Query';
       me: {
         __typename: "User";
-        id: string;
         friends: Array<{
           __typename: "User";
-          name: {
-            __typename: "Name";
-            first: string;
-            last: string;
-          }
           friends: Array<{
             __typename: "User";
             id: string;
             logins: Array<number>;
           }>
+          name: {
+            __typename: "Name";
+            first: string;
+            last: string;
+          }
         }>
+        id: string;
       }
     }
     `
@@ -218,9 +218,9 @@ describe("generateTypes", () => {
       __typename: 'Query';
       me: {
         __typename: 'User';
-        id: string;
         bio: string | null;
         email: string | null;
+        id: string;
       }
     }
     `
@@ -290,9 +290,9 @@ describe("generateTypes", () => {
         __typename: 'User';
         friends: Array<{
           __typename: 'User';
-          id: string;
           bio: string | null;
           email: string | null;
+          id: string;
         }>
       }
     }
@@ -324,8 +324,8 @@ describe("generateTypes", () => {
       __typename: 'Query';
       me: {
         __typename: 'User';
-        id: string;
         email: string | null;
+        id: string;
       }
     }
     `
@@ -380,9 +380,9 @@ describe("generateTypes", () => {
       __typename: 'Query';
       dog: {
         __typename: 'Dog';
-        id: string;
-        fur: string;
         barks: boolean;
+        fur: string;
+        id: string;
       }
     }
     `
@@ -406,13 +406,13 @@ describe("generateTypes", () => {
     type AnimalQuery = {
       __typename: 'Query';
       animal: {
-        __typename: 'Dog';
-        id: string;
-        fur: string;
-      } | {
         __typename: 'Cat';
-        id: string;
         fur: string;
+        id: string;
+      } | {
+        __typename: 'Dog';
+        fur: string;
+        id: string;
       }
     }
     `
@@ -442,15 +442,15 @@ describe("generateTypes", () => {
     type AnimalQuery = {
       __typename: 'Query';
       animal: {
-        __typename: 'Dog';
-        id: string;
-        fur: string;
-        barks: boolean;
-      } | {
         __typename: 'Cat';
-        id: string;
         fur: string;
+        id: string;
         meows: boolean;
+      } | {
+        __typename: 'Dog';
+        barks: boolean;
+        fur: string;
+        id: string;
       }
     }
     `
@@ -502,13 +502,13 @@ describe("generateTypes", () => {
     type AnimalQuery = {
       __typename: 'Query';
       animal: {
-        __typename: 'Dog';
-        id: string;
-        barks: boolean;
-      } | {
         __typename: 'Cat';
         id: string;
         meows: boolean;
+      } | {
+        __typename: 'Dog';
+        barks: boolean;
+        id: string;
       }
     }
     `
@@ -588,18 +588,108 @@ describe("generateTypes", () => {
       __typename: 'Query';
       animal: {
         __typename: 'Animal';
-        type:  {
+        type: {
+          __typename: 'Cat';
+        } | {
           __typename: 'Dog';
           age:  {
             __typename: 'Known';
-            years: number;
             months: number;
+            years: number;
           } | {
             __typename: 'Unknown';
           }
-        } | {
-          __typename: 'Cat';
         }
+      }
+    }
+    `
+    );
+  });
+
+  test("union and interface", () => {
+    runTest(
+      `
+      schema {
+        query: Query
+      }
+      
+      type Query {
+        animal: Animal!
+      }
+      
+      union Age = Known | Unknown
+      
+      type Known {
+        years: Int!
+        months: Int!
+      }
+      
+      type Unknown {
+        reason: String!
+      }
+
+      interface Animal {
+        id: String!
+        age: Age!
+      }
+
+      type Dog implements Animal {
+        id: String!
+        age: Age!
+        barks: Boolean!
+      }
+
+      type Cat implements Animal {
+        id: String!
+        age: Age!
+        meows: Boolean!
+      }
+      `,
+      [
+        `
+        query GetAnimal {
+          animal {
+            age {
+              ... on Known {
+                years
+              }
+              ... on Unknown {
+                reason
+              }
+            }
+            ... on Dog {
+              barks
+            }
+            ... on Cat {
+              meows
+            }
+          }
+        }
+      `,
+      ],
+      `
+    type GetAnimalQuery = {
+      __typename: 'Query';
+      animal: {
+        __typename: 'Cat';
+        age: {
+          __typename: 'Known';
+          years: number;
+        } | {
+          __typename: 'Unknown';
+          reason: string;
+        };
+        meows: boolean;
+      } | {
+        __typename: 'Dog';
+        age: {
+          __typename: 'Known';
+          years: number;
+        } | {
+          __typename: 'Unknown';
+          reason: string;
+        };
+        barks: boolean;
       }
     }
     `
@@ -608,3 +698,4 @@ describe("generateTypes", () => {
 });
 
 // TODO: Test multiple documents
+// TODO: Multiple fragments

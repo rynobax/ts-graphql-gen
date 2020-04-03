@@ -23,7 +23,9 @@ export function treeToString(tree: OperationPrintTree): string {
 }
 
 function leafsToString(leafs: PrintTreeLeaf[]) {
-  return leafs.map(leafToString).join(EOL);
+  // Sort leafs alphabetically
+  const sorted = leafs.sort((a, b) => a.key.localeCompare(b.key));
+  return sorted.map(leafToString).join(EOL);
 }
 
 function leafToString(leaf: PrintTreeLeaf): string {
@@ -35,7 +37,9 @@ function leafToString(leaf: PrintTreeLeaf): string {
     // Important that we don't use the merged leafs, because we want to
     // include the __typename for a interface even if we aren't getting
     // any of it's fields
-    const conditions = uniq(leaf.leafs.map((l) => l.condition).filter(nonNull));
+    const conditions = uniq(
+      leaf.leafs.map((l) => l.condition).filter(nonNull)
+    ).sort((a, b) => a.localeCompare(b));
     if (conditions.length > 0) {
       // Multiple possible types
       // TODO: Can the two types be null and Something?
