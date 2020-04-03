@@ -9,10 +9,7 @@ function nonNull<T>(e: T | null): e is T {
 
 export function treeToString(tree: OperationPrintTree): string {
   // console.dir(tree, {depth: 9});
-  return `
-  ${printOperation(tree)}
-  ${printVariables(tree)}
-  `;
+  return `${printOperation(tree)}${printVariables(tree)}`;
 }
 
 function printOperation({
@@ -34,6 +31,7 @@ function printVariables({
   operationType,
   variables,
 }: OperationPrintTree): string {
+  if (variables.length === 0) return "";
   const typeName = name + operationType + "Variables";
   return `
   type ${typeName} = {
