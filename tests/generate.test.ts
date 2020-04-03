@@ -819,4 +819,29 @@ describe("generateTypes", () => {
     `
     );
   });
+
+  test("renaming field", () => {
+    runTest(
+      simpleSchema,
+      [
+        `
+      query Me {
+        me {
+          coolId: id
+          coolBio: bio
+        }
+      }`,
+      ],
+      `
+    type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        coolBio: string | null;
+        coolId: string;
+      }
+    }
+    `
+    );
+  });
 });

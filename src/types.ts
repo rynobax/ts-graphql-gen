@@ -40,7 +40,7 @@ export interface PrintTreeLeaf {
   type: SchemaType;
   // Information about the type of the node
   typeInfo: SchemaTypeInfo;
-  // The graphql field name
+  // The result field name (could be renamed from field)
   key: string;
   // The possible versions that could exist
   // There is more than one if there are unions or interfaces involved

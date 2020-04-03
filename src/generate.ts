@@ -163,19 +163,19 @@ function fieldToLeaf(
   history: History,
   condition: string | null
 ): PrintTreeLeaf[] {
-  const name = node.name.value;
+  const field = node.name.value;
+  const key = node.alias ? node.alias.value : field;
 
   const newHistory = condition
-    ? { root: condition, steps: [name] }
-    : { ...history, steps: [...history.steps, name] };
-  // cant just use field names, because we need to know which route we are going down
+    ? { root: condition, steps: [field] }
+    : { ...history, steps: [...history.steps, field] };
   const currentType = findCurrentTypeInMap(typeMap, newHistory);
   const typeInfo = typeMap[currentType.value];
   if (node.selectionSet) {
-    // Field is an object type, and will have children leafs
+    // Node is an object type, and will have children leafs
     return [
       {
-        key: name,
+        key,
         type: currentType,
         typeInfo,
         condition,
@@ -191,10 +191,10 @@ function fieldToLeaf(
       },
     ];
   } else {
-    // Field is a scalar
+    // Node is a scalar
     return [
       {
-        key: name,
+        key,
         type: currentType,
         typeInfo: typeMap[currentType.value],
         condition,
