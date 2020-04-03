@@ -43,9 +43,9 @@ const doc = (content: string): Document => ({
 const fmt = (str: string) => prettierFormat(str, { parser: "typescript" });
 
 describe("generateTypes", () => {
-  const runTest = (schema: string, queries: string[], result: string) => {
-    expect(fmt(generateTypesString(queries.map(doc), schema))).toEqual(
-      fmt(result)
+  const runTest = (schema: string, queries: string[], expected: string) => {
+    expect(fmt(expected)).toEqual(
+      fmt(generateTypesString(queries.map(doc), schema))
     );
   };
 
@@ -736,6 +736,50 @@ describe("generateTypes", () => {
     `
     );
   });
-});
 
-// TODO: Test multiple documents
+  test("multiple documents", () => {
+    runTest(
+      simpleSchema,
+      [
+        `
+      query Me {
+        me {
+          id
+          bio
+        }
+      }`,
+        `
+      query MyFriends {
+        me {
+          id
+          friends {
+            id
+          }
+        }
+      }`,
+      ],
+      `
+    type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        bio: string | null;
+        id: string;
+      }
+    }
+
+    type MyFriendsQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        friends: Array<{
+          __typename: 'User';
+          id: string;
+        }>
+        id: string;
+      }
+    }
+    `
+    );
+  });
+});
