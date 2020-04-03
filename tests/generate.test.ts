@@ -259,6 +259,47 @@ describe("generateTypes", () => {
     );
   });
 
+  test("multiple fragments", () => {
+    runTest(
+      simpleSchema,
+      [
+        `
+      query Me {
+        me {
+          id
+          ...Bio
+          ...Friends
+        }
+      }
+      fragment Bio on User {
+        bio
+        email
+      }
+      fragment Friends on User {
+        friends {
+          id
+        }
+      }
+      `,
+      ],
+      `
+    type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        bio: string | null;
+        email: string | null;
+        friends: Array<{
+          __typename: 'User';
+          id: string;
+        }>
+        id: string;
+      }
+    }
+    `
+    );
+  });
+
   test("nested fragments", () => {
     runTest(
       simpleSchema,
@@ -698,4 +739,3 @@ describe("generateTypes", () => {
 });
 
 // TODO: Test multiple documents
-// TODO: Multiple fragments
