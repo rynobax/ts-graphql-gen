@@ -10,6 +10,7 @@ schema {
 
 type Query {
   me: User!
+  user(id: String!): User!
   testing: Testing
 }
 
@@ -42,26 +43,25 @@ const doc = (content: string): Document => ({
 
 const fmt = (str: string) => prettierFormat(str, { parser: "typescript" });
 
-describe("generateTypes", () => {
-  const runTest = (schema: string, queries: string[], expected: string) => {
-    expect(fmt(expected)).toEqual(
-      fmt(generateTypesString(queries.map(doc), schema))
-    );
-  };
+const runTest = (schema: string, queries: string[], expected: string) => {
+  expect(fmt(expected)).toEqual(
+    fmt(generateTypesString(queries.map(doc), schema))
+  );
+};
 
-  test("basic", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("basic", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
       query Me {
         me {
           id
           bio
         }
       }`,
-      ],
-      `
+    ],
+    `
     type MeQuery = {
       __typename: 'Query';
       me: {
@@ -71,21 +71,21 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("list", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("list", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
         query Me {
           me {
             logins
           }
         }`,
-      ],
-      `
+    ],
+    `
       type MeQuery = {
         __typename: 'Query';
         me: {
@@ -94,14 +94,14 @@ describe("generateTypes", () => {
         }
       }
       `
-    );
-  });
+  );
+});
 
-  test("list combinations", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("list combinations", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
         query ListTests {
           testing {
             listOne
@@ -110,8 +110,8 @@ describe("generateTypes", () => {
             listFour
           }
         }`,
-      ],
-      `
+    ],
+    `
       type ListTestsQuery = {
         __typename: 'Query';
         testing: {
@@ -123,14 +123,14 @@ describe("generateTypes", () => {
         }
       }
       `
-    );
-  });
+  );
+});
 
-  test("nested users", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("nested users", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
       query MyFriends {
         me {
           id
@@ -146,8 +146,8 @@ describe("generateTypes", () => {
           }
         }
       }`,
-      ],
-      `
+    ],
+    `
     type MyFriendsQuery = {
       __typename: 'Query';
       me: {
@@ -169,22 +169,22 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("__typename", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("__typename", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
       query Me {
         me {
           __typename
           id
         }
       }`,
-      ],
-      `
+    ],
+    `
     type MeQuery = {
       __typename: 'Query';
       me: {
@@ -193,14 +193,14 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("basic fragment", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("basic fragment", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
       query Me {
         me {
           id
@@ -212,8 +212,8 @@ describe("generateTypes", () => {
         email
       }
       `,
-      ],
-      `
+    ],
+    `
     type MeQuery = {
       __typename: 'Query';
       me: {
@@ -224,14 +224,14 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("fragment with object", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("fragment with object", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
       query Me {
         me {
           ...Friends
@@ -243,8 +243,8 @@ describe("generateTypes", () => {
         }
       }
       `,
-      ],
-      `
+    ],
+    `
     type MeQuery = {
       __typename: 'Query';
       me: {
@@ -256,14 +256,14 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("multiple fragments", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("multiple fragments", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
       query Me {
         me {
           id
@@ -281,8 +281,8 @@ describe("generateTypes", () => {
         }
       }
       `,
-      ],
-      `
+    ],
+    `
     type MeQuery = {
       __typename: 'Query';
       me: {
@@ -297,14 +297,14 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("nested fragments", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("nested fragments", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
       query Me {
         me {
           ...Friends
@@ -323,8 +323,8 @@ describe("generateTypes", () => {
         email
       }
       `,
-      ],
-      `
+    ],
+    `
     type MeQuery = {
       __typename: 'Query';
       me: {
@@ -338,14 +338,14 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("Duplicated fields", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("Duplicated fields", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
       query Me {
         me {
           id
@@ -359,8 +359,8 @@ describe("generateTypes", () => {
         email
       }
       `,
-      ],
-      `
+    ],
+    `
     type MeQuery = {
       __typename: 'Query';
       me: {
@@ -370,10 +370,10 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  const interfaceSchema = `
+const interfaceSchema = `
   schema {
     query: Query
   }
@@ -402,11 +402,11 @@ describe("generateTypes", () => {
   }
   `;
 
-  test("interface no spread", () => {
-    runTest(
-      interfaceSchema,
-      [
-        `
+test("interface no spread", () => {
+  runTest(
+    interfaceSchema,
+    [
+      `
       query Dog {
         dog {
           id
@@ -415,8 +415,8 @@ describe("generateTypes", () => {
         }
       }
       `,
-      ],
-      `
+    ],
+    `
     type DogQuery = {
       __typename: 'Query';
       dog: {
@@ -427,14 +427,14 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("interface no spread 2", () => {
-    runTest(
-      interfaceSchema,
-      [
-        `
+test("interface no spread 2", () => {
+  runTest(
+    interfaceSchema,
+    [
+      `
       query Animal {
         animal {
           id
@@ -442,8 +442,8 @@ describe("generateTypes", () => {
         }
       }
       `,
-      ],
-      `
+    ],
+    `
     type AnimalQuery = {
       __typename: 'Query';
       animal: {
@@ -457,14 +457,14 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("interface spread", () => {
-    runTest(
-      interfaceSchema,
-      [
-        `
+test("interface spread", () => {
+  runTest(
+    interfaceSchema,
+    [
+      `
       query Animal {
         animal {
           id
@@ -478,8 +478,8 @@ describe("generateTypes", () => {
         }
       }
       `,
-      ],
-      `
+    ],
+    `
     type AnimalQuery = {
       __typename: 'Query';
       animal: {
@@ -495,10 +495,10 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  const unionSchema = `
+const unionSchema = `
   schema {
     query: Query
   }
@@ -521,11 +521,11 @@ describe("generateTypes", () => {
   }
   `;
 
-  test("union basic", () => {
-    runTest(
-      unionSchema,
-      [
-        `
+test("union basic", () => {
+  runTest(
+    unionSchema,
+    [
+      `
       query Animal {
         animal {
           ... on Dog {
@@ -539,8 +539,8 @@ describe("generateTypes", () => {
         }
       }
       `,
-      ],
-      `
+    ],
+    `
     type AnimalQuery = {
       __typename: 'Query';
       animal: {
@@ -554,14 +554,14 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("union list", () => {
-    runTest(
-      unionSchema,
-      [
-        `
+test("union list", () => {
+  runTest(
+    unionSchema,
+    [
+      `
       query Animals {
         animals {
           ... on Dog {
@@ -575,8 +575,8 @@ describe("generateTypes", () => {
         }
       }
       `,
-      ],
-      `
+    ],
+    `
     type AnimalsQuery = {
       __typename: 'Query';
       animals: Array<{
@@ -590,12 +590,12 @@ describe("generateTypes", () => {
       }>
     }
     `
-    );
-  });
+  );
+});
 
-  test("nested unions", () => {
-    runTest(
-      `
+test("nested unions", () => {
+  runTest(
+    `
       schema {
         query: Query
       }
@@ -629,8 +629,8 @@ describe("generateTypes", () => {
         age: Age!
       }
       `,
-      [
-        `
+    [
+      `
         query GetAnimal {
           animal {
             type {
@@ -660,8 +660,8 @@ describe("generateTypes", () => {
           }
         }
       `,
-      ],
-      `
+    ],
+    `
     type GetAnimalQuery = {
       __typename: 'Query';
       animal: {
@@ -681,12 +681,12 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("union and interface", () => {
-    runTest(
-      `
+test("union and interface", () => {
+  runTest(
+    `
       schema {
         query: Query
       }
@@ -723,8 +723,8 @@ describe("generateTypes", () => {
         meows: Boolean!
       }
       `,
-      [
-        `
+    [
+      `
         query GetAnimal {
           animal {
             age {
@@ -744,8 +744,8 @@ describe("generateTypes", () => {
           }
         }
       `,
-      ],
-      `
+    ],
+    `
     type GetAnimalQuery = {
       __typename: 'Query';
       animal: {
@@ -771,21 +771,21 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("multiple documents", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("multiple documents", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
       query Me {
         me {
           id
           bio
         }
       }`,
-        `
+      `
       query MyFriends {
         me {
           id
@@ -794,8 +794,8 @@ describe("generateTypes", () => {
           }
         }
       }`,
-      ],
-      `
+    ],
+    `
     type MeQuery = {
       __typename: 'Query';
       me: {
@@ -817,22 +817,22 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
 
-  test("renaming field", () => {
-    runTest(
-      simpleSchema,
-      [
-        `
+test("renaming field", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
       query Me {
         me {
           coolId: id
           coolBio: bio
         }
       }`,
-      ],
-      `
+    ],
+    `
     type MeQuery = {
       __typename: 'Query';
       me: {
@@ -842,6 +842,32 @@ describe("generateTypes", () => {
       }
     }
     `
-    );
-  });
+  );
+});
+
+test("simple query argument", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
+      query User($id: String!) {
+        user(id: $id) {
+          bio
+        }
+      }`,
+    ],
+    `    
+    type UserQuery = {
+      __typename: 'Query';
+      user: {
+        __typename: 'User';
+        bio: string | null;
+      }
+    }
+
+    type UserQueryVariables = {
+      id: string;
+    }
+    `
+  );
 });
