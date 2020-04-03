@@ -105,7 +105,7 @@ describe.only("computeSchemaTypeMap", () => {
       },
     ],
     [
-      "inferface",
+      "interface",
       `
       schema {
         query: Query
@@ -149,11 +149,17 @@ describe.only("computeSchemaTypeMap", () => {
             id: { value: "String", nullable: false, list: false },
             barks: { value: "Boolean", nullable: false, list: false },
           },
+          typesThatThisImplements: {
+            Animal: true,
+          },
         },
         Cat: {
           fields: {
             id: { value: "String", nullable: false, list: false },
             meows: { value: "Boolean", nullable: false, list: false },
+          },
+          typesThatThisImplements: {
+            Animal: true,
           },
         },
       },
