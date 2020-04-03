@@ -1,5 +1,4 @@
-mix of interfaces and unions
-unions and interfaces and lists
 mutations
 input types
+renaming fields
 really complex stuff

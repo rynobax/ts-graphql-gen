@@ -505,6 +505,7 @@ describe("generateTypes", () => {
 
   type Query {
     animal: Animal!
+    animals: [Animal!]!
   }
 
   union Animal = Dog | Cat
@@ -551,6 +552,42 @@ describe("generateTypes", () => {
         barks: boolean;
         id: string;
       }
+    }
+    `
+    );
+  });
+
+  test("union list", () => {
+    runTest(
+      unionSchema,
+      [
+        `
+      query Animals {
+        animals {
+          ... on Dog {
+            id
+            barks
+          }
+          ... on Cat {
+            id
+            meows
+          }
+        }
+      }
+      `,
+      ],
+      `
+    type AnimalsQuery = {
+      __typename: 'Query';
+      animals: Array<{
+        __typename: 'Cat';
+        id: string;
+        meows: boolean;
+      } | {
+        __typename: 'Dog';
+        barks: boolean;
+        id: string;
+      }>
     }
     `
     );
