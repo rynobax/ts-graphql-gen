@@ -32,7 +32,8 @@ export interface OperationPrintTree {
   name: string;
   // Type of the operation (query, mutation, subscription)
   operationType: string;
-  leafs: PrintTreeLeaf[];
+  result: PrintTreeLeaf[];
+  variables: PrintTreeLeaf[];
 }
 
 export interface PrintTreeLeaf {

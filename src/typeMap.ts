@@ -1,4 +1,4 @@
-import { ListTypeNode, FieldDefinitionNode, DocumentNode } from "graphql";
+import { ListTypeNode, DocumentNode, TypeNode } from "graphql";
 
 import { SchemaType, SchemaTypeMap, History } from "./types";
 
@@ -30,10 +30,10 @@ function getListSchemaValue(
   }
 }
 
-function getFieldSchemaValue(field: FieldDefinitionNode): SchemaType {
-  switch (field.type.kind) {
+export function typeNodeToSchemaValue(type: TypeNode): SchemaType {
+  switch (type.kind) {
     case "NonNullType":
-      const nnType = field.type;
+      const nnType = type;
       switch (nnType.type.kind) {
         case "NamedType":
           return {
@@ -45,9 +45,9 @@ function getFieldSchemaValue(field: FieldDefinitionNode): SchemaType {
           return getListSchemaValue(nnType.type, false);
       }
     case "NamedType":
-      return { value: field.type.name.value, nullable: true, list: false };
+      return { value: type.name.value, nullable: true, list: false };
     case "ListType":
-      return getListSchemaValue(field.type, true);
+      return getListSchemaValue(type, true);
   }
 }
 
@@ -82,7 +82,7 @@ export function computeSchemaTypeMap(document: DocumentNode) {
 
           def.fields.forEach((field) => {
             const key = field.name.value;
-            typeMap[name].fields[key] = getFieldSchemaValue(field);
+            typeMap[name].fields[key] = typeNodeToSchemaValue(field.type);
           });
         }
 

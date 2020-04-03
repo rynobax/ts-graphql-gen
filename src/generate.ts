@@ -9,6 +9,7 @@ import {
   GraphQLSchema,
   buildSchema,
   FragmentDefinitionNode,
+  VariableDefinitionNode,
 } from "graphql";
 import { capitalize, flatMap } from "lodash";
 
@@ -19,7 +20,11 @@ import {
   PrintTreeLeaf,
   History,
 } from "./types";
-import { computeSchemaTypeMap, findCurrentTypeInMap } from "./typeMap";
+import {
+  computeSchemaTypeMap,
+  findCurrentTypeInMap,
+  typeNodeToSchemaValue,
+} from "./typeMap";
 import { treeToString } from "./print";
 import { reportErrors, ErrorWithMessage } from "./errors";
 
@@ -78,7 +83,6 @@ function docToTrees(
       }
     } catch (err) {
       errors.push(err);
-      // We will be throwing in a sec if we reach here, so cast is fine
       return null;
     }
   });
@@ -96,10 +100,15 @@ function operationToTree(
   if (!node.name) throw Error(`Found a ${node.operation} without a name`);
   const name = node.name.value;
   const suffix = capitalize(node.operation);
+
+  const variables = node.variableDefinitions
+    ? flatMap(node.variableDefinitions.map((node) => variableToLeafs(node)))
+    : [];
+
   return {
     name,
     operationType: suffix,
-    leafs: flatMap(
+    result: flatMap(
       node.selectionSet.selections.map((node) =>
         nodeToLeafs(
           node,
@@ -113,6 +122,7 @@ function operationToTree(
         )
       )
     ),
+    variables,
   };
 }
 
@@ -125,7 +135,7 @@ function nodeToLeafs(
 ): PrintTreeLeaf[] {
   switch (node.kind) {
     case "Field":
-      return fieldToLeaf(node, typeMap, fragments, history, condition);
+      return [fieldToLeaf(node, typeMap, fragments, history, condition)];
     case "FragmentSpread":
       // With a fragment, we lookup the fragment, then render it's selections
       const fragmentName = node.name.value;
@@ -162,7 +172,7 @@ function fieldToLeaf(
   fragments: FragmentDefinitionNode[],
   history: History,
   condition: string | null
-): PrintTreeLeaf[] {
+): PrintTreeLeaf {
   const field = node.name.value;
   const key = node.alias ? node.alias.value : field;
 
@@ -173,33 +183,41 @@ function fieldToLeaf(
   const typeInfo = typeMap[currentType.value];
   if (node.selectionSet) {
     // Node is an object type, and will have children leafs
-    return [
-      {
-        key,
-        type: currentType,
-        typeInfo,
-        condition,
-        leafs: flatMap([
-          // Insert typename at top
-          ...Object.keys(typeInfo.typesThatImplementThis || {}).map((cond) =>
-            nodeToLeafs(TYPENAME, typeMap, fragments, newHistory, cond)
-          ),
-          ...node.selectionSet.selections.map((n) =>
-            nodeToLeafs(n, typeMap, fragments, newHistory, null)
-          ),
-        ]),
-      },
-    ];
+    return {
+      key,
+      type: currentType,
+      typeInfo,
+      condition,
+      leafs: flatMap([
+        // Insert typename at top
+        ...Object.keys(typeInfo.typesThatImplementThis || {}).map((cond) =>
+          nodeToLeafs(TYPENAME, typeMap, fragments, newHistory, cond)
+        ),
+        ...node.selectionSet.selections.map((n) =>
+          nodeToLeafs(n, typeMap, fragments, newHistory, null)
+        ),
+      ]),
+    };
   } else {
     // Node is a scalar
-    return [
-      {
-        key,
-        type: currentType,
-        typeInfo: typeMap[currentType.value],
-        condition,
-        leafs: [],
-      },
-    ];
+    return {
+      key,
+      type: currentType,
+      typeInfo: typeMap[currentType.value],
+      condition,
+      leafs: [],
+    };
   }
+}
+
+function variableToLeafs(node: VariableDefinitionNode): PrintTreeLeaf {
+  const key = node.variable.name.value;
+  return {
+    condition: null,
+    key,
+    leafs: [],
+    type: typeNodeToSchemaValue(node.type),
+    // TODO: Might need to set this
+    typeInfo: { fields: {} },
+  };
 }

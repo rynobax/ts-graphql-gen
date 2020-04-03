@@ -8,16 +8,36 @@ function nonNull<T>(e: T | null): e is T {
 }
 
 export function treeToString(tree: OperationPrintTree): string {
-  const name = tree.name;
-  const suffix = tree.operationType;
-  const fullName = name + suffix;
-
   // console.dir(tree, {depth: 9});
-
   return `
-  type ${fullName} = {
-    __typename: "${suffix}";
-    ${leafsToString(tree.leafs)}
+  ${printOperation(tree)}
+  ${printVariables(tree)}
+  `;
+}
+
+function printOperation({
+  name,
+  operationType,
+  result,
+}: OperationPrintTree): string {
+  const typeName = name + operationType;
+  return `
+  type ${typeName} = {
+    __typename: "${operationType}";
+    ${leafsToString(result)}
+  }
+  `;
+}
+
+function printVariables({
+  name,
+  operationType,
+  variables,
+}: OperationPrintTree): string {
+  const typeName = name + operationType + "Variables";
+  return `
+  type ${typeName} = {
+    ${leafsToString(variables)}
   }
   `;
 }
