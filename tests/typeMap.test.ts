@@ -25,7 +25,6 @@ describe.only("computeSchemaTypeMap", () => {
             },
           ],
         ]),
-        inputTypes: new Map(),
       },
     ],
     [
@@ -72,7 +71,6 @@ describe.only("computeSchemaTypeMap", () => {
             },
           ],
         ]),
-        inputTypes: new Map(),
       },
     ],
     [
@@ -127,7 +125,6 @@ describe.only("computeSchemaTypeMap", () => {
             },
           ],
         ]),
-        inputTypes: new Map(),
       },
     ],
     [
@@ -179,7 +176,6 @@ describe.only("computeSchemaTypeMap", () => {
             },
           ],
         ]),
-        inputTypes: new Map(),
       },
     ],
     [
@@ -252,7 +248,6 @@ describe.only("computeSchemaTypeMap", () => {
             },
           ],
         ]),
-        inputTypes: new Map(),
       },
     ],
   ])("%s", (_title, schema, result) => {

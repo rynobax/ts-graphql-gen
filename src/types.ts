@@ -10,9 +10,8 @@ export type SchemaType = {
 };
 
 export interface SchemaTypeMap {
+  // TODO: This key may end up not having other neighbors, if so can probably remove and flatten
   returnTypes: Map<string, ReturnTypeInfo>;
-  // TODO: Might be able to delete these
-  inputTypes: Map<string, InputTypeInfo>;
 }
 
 interface ReturnTypeInfo {
@@ -20,10 +19,6 @@ interface ReturnTypeInfo {
   typesThatImplementThis: Set<string>;
   // Types that this type implements
   typesThatThisImplements: Set<string>;
-  fields: Map<string, SchemaType>;
-}
-
-interface InputTypeInfo {
   fields: Map<string, SchemaType>;
 }
 

@@ -5,7 +5,6 @@ import {
   ObjectTypeDefinitionNode,
   InterfaceTypeDefinitionNode,
   UnionTypeDefinitionNode,
-  InputObjectTypeDefinitionNode,
 } from "graphql";
 
 import { SchemaType, SchemaTypeMap, History } from "./types";
@@ -61,21 +60,19 @@ export function typeNodeToSchemaValue(type: TypeNode): SchemaType {
 
 export function computeSchemaTypeMap(document: DocumentNode) {
   const typeMap: SchemaTypeMap = {
-    inputTypes: new Map(),
     returnTypes: new Map(),
   };
 
   document.definitions.forEach((def) => {
     switch (def.kind) {
-      case "SchemaDefinition":
-        break;
       case "ObjectTypeDefinition":
       case "InterfaceTypeDefinition":
       case "UnionTypeDefinition":
         addObjectToMap(typeMap, def);
         return;
+      case "SchemaDefinition":
+        return;
       case "InputObjectTypeDefinition":
-        addInputObjectToMap(typeMap, def);
         return;
       default:
         throw Error(`Unknown kind parsing schema: ${def.kind}`);
@@ -155,41 +152,12 @@ function addObjectToMap(
   }
 }
 
-function addInputObjectToMap(
-  typeMap: SchemaTypeMap,
-  def: InputObjectTypeDefinitionNode
-) {
-  const name = def.name.value;
-
-  if (!typeMap.returnTypes.has(name)) initializeInputType(typeMap, name);
-
-  // Can use nonNull assertion because we just initialized it above
-  const { fields } = typeMap.inputTypes.get(name)!;
-  if (fields.size > 1) {
-    // An implementing type may already have created the structure,
-    // but the type fields should only be set once, so if this happens
-    // the schema has a duplicate type name
-    throw Error(`Duplicate type name ${name}`);
-  }
-
-  if (def.fields) {
-    def.fields.forEach((field) => {
-      const key = field.name.value;
-      fields.set(key, typeNodeToSchemaValue(field.type));
-    });
-  }
-}
-
 function initializeReturnType(typeMap: SchemaTypeMap, typeName: string) {
   typeMap.returnTypes.set(typeName, {
     fields: new Map(),
     typesThatImplementThis: new Set(),
     typesThatThisImplements: new Set(),
   });
-}
-
-function initializeInputType(typeMap: SchemaTypeMap, typeName: string) {
-  typeMap.inputTypes.set(typeName, { fields: new Map() });
 }
 
 // TODO: Rename this
