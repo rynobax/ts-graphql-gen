@@ -11,6 +11,7 @@ export type SchemaType = {
 
 export interface SchemaTypeMap {
   returnTypes: Map<string, ReturnTypeInfo>;
+  // TODO: Might be able to delete these
   inputTypes: Map<string, InputTypeInfo>;
 }
 
@@ -32,7 +33,8 @@ export interface OperationPrintTree {
   // Type of the operation (query, mutation, subscription)
   operationType: string;
   returnTypeTree: PrintTreeLeaf[];
-  variablesTree: PrintTreeLeaf[];
+  variablesTypeTree: PrintTreeLeaf[];
+  inputTypeTree: PrintTreeLeaf[];
 }
 
 export interface PrintTreeLeaf {

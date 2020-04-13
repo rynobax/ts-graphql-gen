@@ -27,6 +27,7 @@ import {
 } from "./typeMap";
 import { treeToString } from "./print";
 import { reportErrors, ErrorWithMessage } from "./errors";
+import { globalTypesToString } from "./global";
 
 function nonNull<T>(e: T | null): e is T {
   return e !== null;
@@ -36,15 +37,17 @@ export function generateTypesString(
   documents: Document[],
   schemaText: string
 ): string {
-  const typeMap = computeSchemaTypeMap(parse(schemaText));
+  const schemaNodes = parse(schemaText);
+  const typeMap = computeSchemaTypeMap(schemaNodes);
   const schema = buildSchema(schemaText);
+  const globalTypes = globalTypesToString(schemaNodes);
   const result = documents
     .map((doc) => {
       const trees = docToTrees(doc, typeMap, schema);
       return trees.filter(nonNull).map(treeToString).join(EOL);
     })
     .join(EOL);
-  return result;
+  return [globalTypes, result].join(EOL);
 }
 
 function isFragmentDefinition(
@@ -101,28 +104,35 @@ function operationToTree(
   const name = node.name.value;
   const suffix = capitalize(node.operation);
 
-  const variables = node.variableDefinitions
+  const returnTypeTree = flatMap(
+    node.selectionSet.selections.map((node) =>
+      nodeToLeafs(
+        node,
+        typeMap,
+        fragments,
+        {
+          root: suffix,
+          steps: [],
+        },
+        null
+      )
+    )
+  );
+
+  const variablesTypeTree = node.variableDefinitions
+    ? flatMap(node.variableDefinitions.map((node) => variableToLeafs(node)))
+    : [];
+
+  const inputTypeTree = node.variableDefinitions
     ? flatMap(node.variableDefinitions.map((node) => variableToLeafs(node)))
     : [];
 
   return {
     name,
     operationType: suffix,
-    returnTypeTree: flatMap(
-      node.selectionSet.selections.map((node) =>
-        nodeToLeafs(
-          node,
-          typeMap,
-          fragments,
-          {
-            root: suffix,
-            steps: [],
-          },
-          null
-        )
-      )
-    ),
-    variablesTree: variables,
+    returnTypeTree,
+    variablesTypeTree,
+    inputTypeTree,
   };
 }
 

@@ -44,8 +44,8 @@ const doc = (content: string): Document => ({
 const fmt = (str: string) => prettierFormat(str, { parser: "typescript" });
 
 const runTest = (schema: string, queries: string[], expected: string) => {
-  expect(fmt(expected)).toEqual(
-    fmt(generateTypesString(queries.map(doc), schema))
+  expect(fmt(generateTypesString(queries.map(doc), schema))).toEqual(
+    fmt(expected)
   );
 };
 
@@ -905,25 +905,29 @@ test("complex query argument", () => {
       }
     }`,
     ],
-    `    
-  type UsersQuery = {
-    __typename: 'Query';
-    users: Array<{
-      __typename: 'User';
-      id: string;
-    }>
-  }
+    `
+    type UserSearchInput = {           
+      name: UserSearchNameInput | null;
+      email: String | null;            
+    };                                 
+                                        
+    type UserSearchNameInput = {       
+      first: String;                   
+      last: String;                    
+    };                                 
+                                        
+    type UsersQuery = {
+      __typename: 'Query';
+      users: Array<{
+        __typename: 'User';
+        id: string;
+      }>
+    }
 
-  type UsersQueryVariables = {
-    input: {
-      email: string;
-      name: {
-        first: string;
-        last: string;
-      }
-    };
-    resultCount: number | null;
-  }
-  `
+    type UsersQueryVariables = {
+      input: UserSearchInput;
+      resultCount: number | null;
+    }
+    `
   );
 });

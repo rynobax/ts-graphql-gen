@@ -29,7 +29,7 @@ function printOperation({
 function printVariables({
   name,
   operationType,
-  variablesTree: variables,
+  variablesTypeTree: variables,
 }: OperationPrintTree): string {
   if (variables.length === 0) return "";
   const typeName = name + operationType + "Variables";
@@ -53,7 +53,6 @@ function returnTypeLeafsToString(leafs: PrintTreeLeaf[]) {
 }
 
 function variableTypeLeafToString(leaf: PrintTreeLeaf): string {
-  console.log(leaf);
   if (leaf.leafs.length > 0) {
     // input object field
     const typename =
