@@ -15,13 +15,13 @@ export function treeToString(tree: OperationPrintTree): string {
 function printOperation({
   name,
   operationType,
-  result,
+  returnTypeTree: result,
 }: OperationPrintTree): string {
   const typeName = name + operationType;
   return `
   type ${typeName} = {
     __typename: "${operationType}";
-    ${leafsToString(result)}
+    ${returnTypeLeafsToString(result)}
   }
   `;
 }
@@ -29,29 +29,56 @@ function printOperation({
 function printVariables({
   name,
   operationType,
-  variables,
+  variablesTree: variables,
 }: OperationPrintTree): string {
   if (variables.length === 0) return "";
   const typeName = name + operationType + "Variables";
   return `
   type ${typeName} = {
-    ${leafsToString(variables)}
+    ${variableTypeLeafsToString(variables)}
   }
   `;
 }
 
-function leafsToString(leafs: PrintTreeLeaf[]) {
+function variableTypeLeafsToString(leafs: PrintTreeLeaf[]) {
   // Sort leafs alphabetically
   const sorted = leafs.sort((a, b) => a.key.localeCompare(b.key));
-  return sorted.map(leafToString).join(EOL);
+  return sorted.map(variableTypeLeafToString).join(EOL);
 }
 
-function leafToString(leaf: PrintTreeLeaf): string {
-  // Some leafs may be the same field, but with different subfields selected,
-  // due to multiple fragments, so first we need to merge them
+function returnTypeLeafsToString(leafs: PrintTreeLeaf[]) {
+  // Sort leafs alphabetically
+  const sorted = leafs.sort((a, b) => a.key.localeCompare(b.key));
+  return sorted.map(returnTypeLeafToString).join(EOL);
+}
+
+function variableTypeLeafToString(leaf: PrintTreeLeaf): string {
+  console.log(leaf);
   if (leaf.leafs.length > 0) {
-    const leafs = mergeLeafs(leaf.leafs);
+    // input object field
+    const typename =
+      leaf.typeInfo && leaf.typeInfo.typesThatImplementThis.size > 0
+        ? Array.from(leaf.typeInfo.typesThatImplementThis)
+            .map((e) => `"${e}"`)
+            .join(" | ")
+        : `"${leaf.type.value}"`;
+    const innerText = `{
+      __typename: ${typename};
+      ${returnTypeLeafsToString(leaf.leafs)}
+    }`;
+    return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
+  } else {
+    // scalar field
+    return `${leaf.key}: ${graphqlTypeToTS(leaf.type)};`;
+  }
+}
+
+function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
+  if (leaf.leafs.length > 0) {
     // object field
+    // Some leafs may be the same field, but with different subfields selected,
+    // due to multiple fragments, so first we need to merge them
+    const leafs = mergeLeafs(leaf.leafs);
     // Important that we don't use the merged leafs, because we want to
     // include the __typename for a interface even if we aren't getting
     // any of it's fields
@@ -69,21 +96,22 @@ function leafToString(leaf: PrintTreeLeaf): string {
           );
           return `{
             __typename: "${c}";
-            ${leafsToString(relevantLeafs)}
+            ${returnTypeLeafsToString(relevantLeafs)}
           }`;
         })
         .join(` |${EOL}`);
       return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
     } else {
       // Single possible type
-      const typename = leaf.typeInfo.typesThatImplementThis
-        ? Object.keys(leaf.typeInfo.typesThatImplementThis)
-            .map((e) => `"${e}"`)
-            .join(" | ")
-        : `"${leaf.type.value}"`;
+      const typename =
+        leaf.typeInfo && leaf.typeInfo.typesThatImplementThis.size > 0
+          ? Array.from(leaf.typeInfo.typesThatImplementThis)
+              .map((e) => `"${e}"`)
+              .join(" | ")
+          : `"${leaf.type.value}"`;
       const innerText = `{
         __typename: ${typename};
-        ${leafsToString(leafs)}
+        ${returnTypeLeafsToString(leafs)}
       }`;
       return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
     }

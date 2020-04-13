@@ -108,7 +108,7 @@ function operationToTree(
   return {
     name,
     operationType: suffix,
-    result: flatMap(
+    returnTypeTree: flatMap(
       node.selectionSet.selections.map((node) =>
         nodeToLeafs(
           node,
@@ -122,7 +122,7 @@ function operationToTree(
         )
       )
     ),
-    variables,
+    variablesTree: variables,
   };
 }
 
@@ -180,8 +180,9 @@ function fieldToLeaf(
     ? { root: condition, steps: [field] }
     : { ...history, steps: [...history.steps, field] };
   const currentType = findCurrentTypeInMap(typeMap, newHistory);
-  const typeInfo = typeMap[currentType.value];
   if (node.selectionSet) {
+    const typeInfo = typeMap.returnTypes.get(currentType.value);
+    if (!typeInfo) throw Error(`Missing typeInfo for ${field}`);
     // Node is an object type, and will have children leafs
     return {
       key,
@@ -190,7 +191,7 @@ function fieldToLeaf(
       condition,
       leafs: flatMap([
         // Insert typename at top
-        ...Object.keys(typeInfo.typesThatImplementThis || {}).map((cond) =>
+        ...Array.from(typeInfo.typesThatImplementThis).map((cond) =>
           nodeToLeafs(TYPENAME, typeMap, fragments, newHistory, cond)
         ),
         ...node.selectionSet.selections.map((n) =>
@@ -203,7 +204,7 @@ function fieldToLeaf(
     return {
       key,
       type: currentType,
-      typeInfo: typeMap[currentType.value],
+      typeInfo: null,
       condition,
       leafs: [],
     };
@@ -218,6 +219,6 @@ function variableToLeafs(node: VariableDefinitionNode): PrintTreeLeaf {
     leafs: [],
     type: typeNodeToSchemaValue(node.type),
     // TODO: Might need to set this
-    typeInfo: { fields: {} },
+    typeInfo: null,
   };
 }

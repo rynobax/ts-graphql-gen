@@ -12,12 +12,20 @@ describe.only("computeSchemaTypeMap", () => {
         bar: Int!
       }`,
       {
-        Query: {
-          fields: {
-            foo: { value: "String", nullable: true, list: false },
-            bar: { value: "Int", nullable: false, list: false },
-          },
-        },
+        returnTypes: new Map([
+          [
+            "Query",
+            {
+              fields: new Map([
+                ["foo", { value: "String", nullable: true, list: false }],
+                ["bar", { value: "Int", nullable: false, list: false }],
+              ]),
+              typesThatImplementThis: new Set(),
+              typesThatThisImplements: new Set(),
+            },
+          ],
+        ]),
+        inputTypes: new Map(),
       },
     ],
     [
@@ -33,22 +41,38 @@ describe.only("computeSchemaTypeMap", () => {
       }
       `,
       {
-        Query: {
-          fields: {
-            dog: { value: "Dog", nullable: false, list: false },
-            nullableDog: { value: "Dog", nullable: true, list: false },
-            dogList: {
-              value: "Dog",
-              nullable: false,
-              list: { nullable: false },
+        returnTypes: new Map([
+          [
+            "Query",
+            {
+              fields: new Map([
+                ["dog", { value: "Dog", nullable: false, list: false }],
+                ["nullableDog", { value: "Dog", nullable: true, list: false }],
+                [
+                  "dogList",
+                  {
+                    value: "Dog",
+                    nullable: false,
+                    list: { nullable: false },
+                  },
+                ],
+              ]),
+              typesThatImplementThis: new Set(),
+              typesThatThisImplements: new Set(),
             },
-          },
-        },
-        Dog: {
-          fields: {
-            weight: { value: "Int", nullable: false, list: false },
-          },
-        },
+          ],
+          [
+            "Dog",
+            {
+              fields: new Map([
+                ["weight", { value: "Int", nullable: false, list: false }],
+              ]),
+              typesThatImplementThis: new Set(),
+              typesThatThisImplements: new Set(),
+            },
+          ],
+        ]),
+        inputTypes: new Map(),
       },
     ],
     [
@@ -60,14 +84,50 @@ describe.only("computeSchemaTypeMap", () => {
         four: [Int]
       }`,
       {
-        Query: {
-          fields: {
-            one: { value: "Int", nullable: false, list: { nullable: false } },
-            two: { value: "Int", nullable: false, list: { nullable: true } },
-            three: { value: "Int", nullable: true, list: { nullable: false } },
-            four: { value: "Int", nullable: true, list: { nullable: true } },
-          },
-        },
+        returnTypes: new Map([
+          [
+            "Query",
+            {
+              fields: new Map([
+                [
+                  "one",
+                  {
+                    value: "Int",
+                    nullable: false,
+                    list: { nullable: false },
+                  },
+                ],
+                [
+                  "two",
+                  {
+                    value: "Int",
+                    nullable: false,
+                    list: { nullable: true },
+                  },
+                ],
+                [
+                  "three",
+                  {
+                    value: "Int",
+                    nullable: true,
+                    list: { nullable: false },
+                  },
+                ],
+                [
+                  "four",
+                  {
+                    value: "Int",
+                    nullable: true,
+                    list: { nullable: true },
+                  },
+                ],
+              ]),
+              typesThatImplementThis: new Set(),
+              typesThatThisImplements: new Set(),
+            },
+          ],
+        ]),
+        inputTypes: new Map(),
       },
     ],
     [
@@ -75,7 +135,7 @@ describe.only("computeSchemaTypeMap", () => {
       `type Query {
         dog: Dog!
       }
-      
+
       type Dog {
         size: Size!
       }
@@ -86,22 +146,40 @@ describe.only("computeSchemaTypeMap", () => {
       }
       `,
       {
-        Query: {
-          fields: {
-            dog: { value: "Dog", nullable: false, list: false },
-          },
-        },
-        Dog: {
-          fields: {
-            size: { value: "Size", nullable: false, list: false },
-          },
-        },
-        Size: {
-          fields: {
-            length: { value: "Int", nullable: false, list: false },
-            weight: { value: "Int", nullable: false, list: false },
-          },
-        },
+        returnTypes: new Map([
+          [
+            "Query",
+            {
+              fields: new Map([
+                ["dog", { value: "Dog", nullable: false, list: false }],
+              ]),
+              typesThatImplementThis: new Set(),
+              typesThatThisImplements: new Set(),
+            },
+          ],
+          [
+            "Dog",
+            {
+              fields: new Map([
+                ["size", { value: "Size", nullable: false, list: false }],
+              ]),
+              typesThatImplementThis: new Set(),
+              typesThatThisImplements: new Set(),
+            },
+          ],
+          [
+            "Size",
+            {
+              fields: new Map([
+                ["length", { value: "Int", nullable: false, list: false }],
+                ["weight", { value: "Int", nullable: false, list: false }],
+              ]),
+              typesThatImplementThis: new Set(),
+              typesThatThisImplements: new Set(),
+            },
+          ],
+        ]),
+        inputTypes: new Map(),
       },
     ],
     [
@@ -110,58 +188,71 @@ describe.only("computeSchemaTypeMap", () => {
       schema {
         query: Query
       }
-      
+
       type Query {
         animal: Animal!
       }
-      
+
       interface Animal {
         id: String!
       }
-      
+
       type Dog implements Animal {
         id: String!
         barks: Boolean!
       }
-      
+
       type Cat implements Animal {
         id: String!
         meows: Boolean!
       }
       `,
       {
-        Query: {
-          fields: {
-            animal: { value: "Animal", nullable: false, list: false },
-          },
-        },
-        Animal: {
-          typesThatImplementThis: {
-            Dog: true,
-            Cat: true,
-          },
-          fields: {
-            id: { value: "String", nullable: false, list: false },
-          },
-        },
-        Dog: {
-          fields: {
-            id: { value: "String", nullable: false, list: false },
-            barks: { value: "Boolean", nullable: false, list: false },
-          },
-          typesThatThisImplements: {
-            Animal: true,
-          },
-        },
-        Cat: {
-          fields: {
-            id: { value: "String", nullable: false, list: false },
-            meows: { value: "Boolean", nullable: false, list: false },
-          },
-          typesThatThisImplements: {
-            Animal: true,
-          },
-        },
+        returnTypes: new Map([
+          [
+            "Query",
+            {
+              fields: new Map([
+                ["animal", { value: "Animal", nullable: false, list: false }],
+              ]),
+              typesThatImplementThis: new Set(),
+              typesThatThisImplements: new Set(),
+            },
+          ],
+          [
+            "Animal",
+            {
+              fields: new Map([
+                ["id", { value: "String", nullable: false, list: false }],
+              ]),
+              typesThatImplementThis: new Set(["Dog", "Cat"]),
+              typesThatThisImplements: new Set(),
+            },
+          ],
+          [
+            "Dog",
+            {
+              fields: new Map([
+                ["id", { value: "String", nullable: false, list: false }],
+                ["barks", { value: "Boolean", nullable: false, list: false }],
+              ]),
+              typesThatImplementThis: new Set(),
+              typesThatThisImplements: new Set(["Animal"]),
+            },
+          ],
+          [
+            "Cat",
+            {
+              fields: new Map([
+                ["id", { value: "String", nullable: false, list: false }],
+                ["meows", { value: "Boolean", nullable: false, list: false }],
+              ]),
+              typesThatImplementThis: new Set(),
+              typesThatThisImplements: new Set(["Animal"]),
+            },
+          ],
+        ]),
+        inputTypes: new Map(),
       },
     ],
   ])("%s", (_title, schema, result) => {

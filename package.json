@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "local": "node .\\build\\cli.js -f localtesting/*.ts -s localtesting/schema.graphql -o test.ts"
   },
   "files": [
     "build"

@@ -52,12 +52,17 @@ export function typeNodeToSchemaValue(type: TypeNode): SchemaType {
 }
 
 export function computeSchemaTypeMap(document: DocumentNode) {
-  const typeMap: SchemaTypeMap = {};
+  const typeMap: SchemaTypeMap = {
+    inputTypes: new Map(),
+    returnTypes: new Map(),
+  };
 
   function initializeType(typeName: string) {
-    typeMap[typeName] = {
-      fields: {},
-    };
+    typeMap.returnTypes.set(typeName, {
+      fields: new Map(),
+      typesThatImplementThis: new Set(),
+      typesThatThisImplements: new Set(),
+    });
   }
 
   document.definitions.forEach((def) => {
@@ -69,11 +74,18 @@ export function computeSchemaTypeMap(document: DocumentNode) {
       case "UnionTypeDefinition":
         const name = def.name.value;
 
-        if (!typeMap[name]) initializeType(name);
+        if (!typeMap.returnTypes.has(name)) initializeType(name);
+
+        // Can use nonNull assertion because we just initialized it above
+        const {
+          fields,
+          typesThatImplementThis,
+          typesThatThisImplements,
+        } = typeMap.returnTypes.get(name)!;
 
         // Objects and Interfaces
         if ("fields" in def && def.fields && def.fields.length > 0) {
-          if (Object.keys(typeMap[name].fields).length > 1) {
+          if (fields.size > 1) {
             // An implementing type may already have created the structure,
             // but the type fields should only be set once, so if this happens
             // the schema has a duplicate type name
@@ -82,7 +94,7 @@ export function computeSchemaTypeMap(document: DocumentNode) {
 
           def.fields.forEach((field) => {
             const key = field.name.value;
-            typeMap[name].fields[key] = typeNodeToSchemaValue(field.type);
+            fields.set(key, typeNodeToSchemaValue(field.type));
           });
         }
 
@@ -94,20 +106,17 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         ) {
           def.interfaces.forEach((intf) => {
             const typeThatThisImplements = intf.name.value;
-            if (!typeMap[typeThatThisImplements])
-              initializeType(typeThatThisImplements);
 
             // Add interfaces that this implements
-            typeMap[name].typesThatThisImplements = {
-              ...typeMap[name].typesThatThisImplements,
-              [typeThatThisImplements]: true,
-            };
+            typesThatThisImplements.add(typeThatThisImplements);
 
             // Add this to the interface it implements
-            typeMap[typeThatThisImplements].typesThatImplementThis = {
-              ...typeMap[typeThatThisImplements].typesThatImplementThis,
-              [name]: true,
-            };
+            if (!typeMap.returnTypes.has(typeThatThisImplements))
+              initializeType(typeThatThisImplements);
+            typeMap.returnTypes
+              // Can nonNull assert because it gets initialized above
+              .get(typeThatThisImplements)!
+              .typesThatImplementThis.add(name);
           });
         }
 
@@ -115,22 +124,37 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         if ("types" in def && def.types && def.types.length > 0) {
           def.types.forEach((type) => {
             const typeThatThisIsImplementedBy = type.name.value;
-            if (!typeMap[typeThatThisIsImplementedBy])
-              initializeType(typeThatThisIsImplementedBy);
 
             // Add interfaces that this implements
-            typeMap[name].typesThatImplementThis = {
-              ...typeMap[name].typesThatImplementThis,
-              [typeThatThisIsImplementedBy]: true,
-            };
+            typesThatImplementThis.add(typeThatThisIsImplementedBy);
 
             // Add this to the interface it implements
-            typeMap[typeThatThisIsImplementedBy].typesThatThisImplements = {
-              ...typeMap[typeThatThisIsImplementedBy].typesThatThisImplements,
-              [name]: true,
-            };
+            if (!typeMap.returnTypes.has(typeThatThisIsImplementedBy))
+              initializeType(typeThatThisIsImplementedBy);
+            typeMap.returnTypes
+              // Can nonNull assert because it gets initialized above
+              .get(typeThatThisIsImplementedBy)!
+              .typesThatThisImplements.add(name);
           });
         }
+        return;
+      case "InputObjectTypeDefinition":
+        // TODO: Store this somewhere
+        // const name = def.name.value;
+        // if (Object.keys(typeMap.returnTypes[name].fields).length > 1) {
+        //   // An implementing type may already have created the structure,
+        //   // but the type fields should only be set once, so if this happens
+        //   // the schema has a duplicate type name
+        //   throw Error(`Duplicate type name ${name}`);
+        // }
+
+        // def.fields.forEach((field) => {
+        //   const key = field.name.value;
+        //   typeMap.returnTypes[name].fields[key] = typeNodeToSchemaValue(
+        //     field.type
+        //   );
+        // });
+        // typeMap.inputTypes
         return;
       default:
         throw Error(`Unknown kind parsing schema: ${def.kind}`);
@@ -140,6 +164,7 @@ export function computeSchemaTypeMap(document: DocumentNode) {
   return typeMap;
 }
 
+// TODO: Rename this
 export function findCurrentTypeInMap(
   typeMap: SchemaTypeMap,
   history: History
@@ -147,7 +172,7 @@ export function findCurrentTypeInMap(
   if (history.steps[history.steps.length - 1] === "__typename")
     return { value: "THIS_SHOULD_NOT_BE_USED", list: false, nullable: false };
 
-  let last: SchemaTypeMap[string] = typeMap[history.root];
+  let last = typeMap.returnTypes.get(history.root);
   let lastValue: SchemaType | null = null;
   history.steps.forEach((k) => {
     if (k === "__typename") {
@@ -158,7 +183,7 @@ export function findCurrentTypeInMap(
       if (last.typesThatThisImplements) {
         // For interface, it's the union of all possible interfaces
         lastValue = {
-          value: Object.keys(last.typesThatThisImplements)
+          value: Array.from(last.typesThatThisImplements)
             .map((e) => `"${e}"`)
             .join(" | "),
           nullable: false,
@@ -173,11 +198,12 @@ export function findCurrentTypeInMap(
         };
       }
     } else {
+      if (!last) throw Error(`Missing type ${history.root} from typeMap`);
       // Normal fields
-      if (!last.fields[k])
-        throw Error(`Missing field ${k} in type ${lastValue?.value}`);
-      lastValue = last.fields[k];
-      last = typeMap[lastValue.value];
+      const field = last.fields.get(k);
+      if (!field) throw Error(`Missing field ${k} in type ${lastValue?.value}`);
+      lastValue = field;
+      last = typeMap.returnTypes.get(lastValue.value);
     }
   });
   if (!lastValue) throw Error("Missing lastValue");

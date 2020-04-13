@@ -10,21 +10,20 @@ export type SchemaType = {
 };
 
 export interface SchemaTypeMap {
-  [type: string]: SchemaTypeInfo;
+  returnTypes: Map<string, ReturnTypeInfo>;
+  inputTypes: Map<string, InputTypeInfo>;
 }
 
-interface SchemaTypeInfo {
+interface ReturnTypeInfo {
   // Types that implement this type
-  typesThatImplementThis?: {
-    [implementingType: string]: boolean;
-  };
+  typesThatImplementThis: Set<string>;
   // Types that this type implements
-  typesThatThisImplements?: {
-    [implementedType: string]: boolean;
-  };
-  fields: {
-    [field: string]: SchemaType;
-  };
+  typesThatThisImplements: Set<string>;
+  fields: Map<string, SchemaType>;
+}
+
+interface InputTypeInfo {
+  fields: Map<string, SchemaType>;
 }
 
 export interface OperationPrintTree {
@@ -32,15 +31,15 @@ export interface OperationPrintTree {
   name: string;
   // Type of the operation (query, mutation, subscription)
   operationType: string;
-  result: PrintTreeLeaf[];
-  variables: PrintTreeLeaf[];
+  returnTypeTree: PrintTreeLeaf[];
+  variablesTree: PrintTreeLeaf[];
 }
 
 export interface PrintTreeLeaf {
   // The name of the type of this node
   type: SchemaType;
   // Information about the type of the node
-  typeInfo: SchemaTypeInfo;
+  typeInfo: ReturnTypeInfo | null;
   // The result field name (could be renamed from field)
   key: string;
   // The possible versions that could exist

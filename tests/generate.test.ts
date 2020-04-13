@@ -871,3 +871,59 @@ test("simple query argument", () => {
     `
   );
 });
+
+test("complex query argument", () => {
+  runTest(
+    `
+  schema {
+    query: Query
+  }
+ 
+  input UserSearchInput {
+    name: UserSearchNameInput
+    email: String
+  }
+
+  input UserSearchNameInput {
+    first: String!
+    last: String!
+  }
+
+  type Query {
+    users(input: UserSearchInput!, resultCount: Int): [User!]!
+  }
+  
+  type User {
+    id: String!
+  }
+  `,
+    [
+      `
+    query Users($input: UserSearchInput!, $resultCount: Int) {
+      users(input: $input, resultCount: $resultCount) {
+        id
+      }
+    }`,
+    ],
+    `    
+  type UsersQuery = {
+    __typename: 'Query';
+    users: Array<{
+      __typename: 'User';
+      id: string;
+    }>
+  }
+
+  type UsersQueryVariables = {
+    input: {
+      email: string;
+      name: {
+        first: string;
+        last: string;
+      }
+    };
+    resultCount: number | null;
+  }
+  `
+  );
+});
