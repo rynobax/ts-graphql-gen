@@ -908,12 +908,12 @@ test("complex query argument", () => {
     `
     type UserSearchInput = {           
       name: UserSearchNameInput | null;
-      email: String | null;            
+      email: string | null;            
     };                                 
                                         
     type UserSearchNameInput = {       
-      first: String;                   
-      last: String;                    
+      first: string;                   
+      last: string;                    
     };                                 
                                         
     type UsersQuery = {

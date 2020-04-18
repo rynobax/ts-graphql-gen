@@ -6,6 +6,8 @@ import {
   ListTypeNode,
 } from "graphql";
 import { EOL } from "os";
+import { schemaTypeToString } from "./util";
+import { SchemaType } from "./types";
 
 function isInputObjectType(
   node: DefinitionNode
@@ -25,7 +27,7 @@ function inputTypeToString(node: InputObjectTypeDefinitionNode): string {
   const content = node.fields
     .map((f) => {
       const key = f.name.value;
-      const value = typeNodeToType(f.type);
+      const value = schemaTypeToString(typeToSchemaType(f.type));
       return `${key}: ${value};`;
     })
     .join(EOL);
@@ -37,32 +39,43 @@ function inputTypeToString(node: InputObjectTypeDefinitionNode): string {
   }`;
 }
 
-function typeNodeToType(type: TypeNode): string {
-  switch (type.kind) {
+function typeToSchemaType(node: TypeNode): SchemaType {
+  switch (node.kind) {
     case "NonNullType":
-      const nnType = type;
+      const nnType = node;
       switch (nnType.type.kind) {
         case "NamedType":
-          return nnType.type.name.value;
+          return {
+            value: nnType.type.name.value,
+            list: false,
+            nullable: false,
+          };
         case "ListType":
-          return `Array<${getListTypeName(nnType.type)}>`;
+          return listTypeToSchemaType(nnType.type, false);
       }
     case "NamedType":
-      return `${type.name.value} | null`;
+      return { value: node.name.value, list: false, nullable: true };
     case "ListType":
-      return `Array<${getListTypeName(type)}> | null`;
+      return listTypeToSchemaType(node, true);
   }
 }
 
-function getListTypeName(node: ListTypeNode): string {
+function listTypeToSchemaType(
+  node: ListTypeNode,
+  nullable: boolean
+): SchemaType {
   const listType = node.type;
   switch (listType.kind) {
     case "NamedType":
-      return `${listType.name.value} | null`;
+      return { value: listType.name.value, nullable, list: { nullable: true } };
     case "NonNullType":
       switch (listType.type.kind) {
         case "NamedType":
-          return listType.type.name.value;
+          return {
+            value: listType.type.name.value,
+            nullable,
+            list: { nullable: false },
+          };
         default:
           throw Error(`Unimplemented listType type: ${listType.type.kind}`);
       }

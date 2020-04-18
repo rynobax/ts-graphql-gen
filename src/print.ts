@@ -2,6 +2,7 @@ import { EOL } from "os";
 import { uniq } from "lodash";
 
 import { SchemaType, OperationPrintTree, PrintTreeLeaf } from "./types";
+import { schemaTypeToString } from "./util";
 
 function nonNull<T>(e: T | null): e is T {
   return e !== null;
@@ -68,7 +69,7 @@ function variableTypeLeafToString(leaf: PrintTreeLeaf): string {
     return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
   } else {
     // scalar field
-    return `${leaf.key}: ${graphqlTypeToTS(leaf.type)};`;
+    return `${leaf.key}: ${schemaTypeToString(leaf.type)};`;
   }
 }
 
@@ -116,7 +117,7 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
     }
   } else {
     // scalar field
-    return `${leaf.key}: ${graphqlTypeToTS(leaf.type)};`;
+    return `${leaf.key}: ${schemaTypeToString(leaf.type)};`;
   }
 }
 
@@ -139,39 +140,6 @@ function mergeLeafs(leafs: PrintTreeLeaf[]): PrintTreeLeaf[] {
 }
 
 const getLeafKey = (l: PrintTreeLeaf) => `${l.key} | ${l.condition}`;
-
-function graphqlTypeToTS(v: SchemaType): string {
-  let res = "";
-  switch (v.value) {
-    case "Boolean":
-      res = "boolean";
-      break;
-    case "Float":
-      res = "number";
-      break;
-    case "ID":
-      res = "string";
-      break;
-    case "Int":
-      res = "number";
-      break;
-    case "String":
-      res = "string";
-      break;
-    default:
-      res = v.value;
-      break;
-  }
-
-  if (v.nullable) res += " | null";
-
-  if (v.list) {
-    res = `Array<${res}>`;
-    if (v.list.nullable) res += ` | null`;
-  }
-
-  return res;
-}
 
 function listIfNecessary(v: SchemaType, content: string) {
   if (!v.list) return content;
