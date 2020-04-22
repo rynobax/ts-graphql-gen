@@ -9,7 +9,6 @@ function nonNull<T>(e: T | null): e is T {
 }
 
 export function treeToString(tree: OperationPrintTree): string {
-  // console.dir(tree, {depth: 9});
   return `${printOperation(tree)}${printVariables(tree)}`;
 }
 
@@ -41,19 +40,17 @@ function printVariables({
 }
 
 function variableTypeLeafsToString(leafs: PrintTreeLeaf[]) {
-  // Sort leafs alphabetically
-  const sorted = mergeLeafs(leafs).sort((a, b) =>
-    a.fieldName.localeCompare(b.fieldName)
-  );
-  return sorted.map(variableTypeLeafToString).join(EOL);
+  return mergeLeafs(leafs)
+    .sort((a, b) => a.fieldName.localeCompare(b.fieldName))
+    .map(variableTypeLeafToString)
+    .join(EOL);
 }
 
 function returnTypeLeafsToString(leafs: PrintTreeLeaf[]) {
-  // Sort leafs alphabetically
-  const sorted = mergeLeafs(leafs).sort((a, b) =>
-    a.fieldName.localeCompare(b.fieldName)
-  );
-  return sorted.map(returnTypeLeafToString).join(EOL);
+  return mergeLeafs(leafs)
+    .sort((a, b) => a.fieldName.localeCompare(b.fieldName))
+    .map(returnTypeLeafToString)
+    .join(EOL);
 }
 
 function variableTypeLeafToString(leaf: PrintTreeLeaf): string {

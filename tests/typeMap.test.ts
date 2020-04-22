@@ -1,10 +1,10 @@
 import { parse } from "graphql";
 
-import { computeSchemaTypeMap } from "../src/typeMap";
-import { SchemaTypeMap } from "../src/types";
+import { computeObjectTypeMap } from "../src/typeMap";
+import { ObjectTypeInfoMap } from "../src/types";
 
-describe.only("computeSchemaTypeMap", () => {
-  test.each<[string, string, SchemaTypeMap]>([
+describe.only("computeObjectTypeMap", () => {
+  test.each<[string, string, ObjectTypeInfoMap]>([
     [
       "basic",
       `type Query {
@@ -241,6 +241,6 @@ describe.only("computeSchemaTypeMap", () => {
       ]),
     ],
   ])("%s", (_title, schema, result) => {
-    expect(computeSchemaTypeMap(parse(schema))).toEqual(result);
+    expect(computeObjectTypeMap(parse(schema))).toEqual(result);
   });
 });
