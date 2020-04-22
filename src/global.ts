@@ -34,7 +34,7 @@ function enumTypeToString(node: EnumTypeDefinitionNode): string {
   const name = node.name.value;
   if (!node.values) throw Error(`Enum ${name} has no values!`);
   const value = node.values.map((v) => `"${v.name.value}"`).join(" | ");
-  return `type ${name} = ${value};`;
+  return `export type ${name} = ${value};`;
 }
 
 function inputTypeToString(node: InputObjectTypeDefinitionNode): string {
@@ -50,7 +50,7 @@ function inputTypeToString(node: InputObjectTypeDefinitionNode): string {
 
   const name = node.name.value;
   return `
-  type ${name} = {
+  export type ${name} = {
     ${content}
   }`;
 }

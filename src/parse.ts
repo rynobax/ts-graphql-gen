@@ -14,11 +14,28 @@ function globPromise(pattern: string) {
   });
 }
 
+// Comes from graphql-tag-pluck
+const supportedFilePaths = [
+  ".js",
+  ".jsx",
+  ".ts",
+  ".tsx",
+  ".flow",
+  ".flow.js",
+  ".flow.jsx",
+  ".vue",
+];
+
 export async function readFiles(pattern: string) {
   const filePaths = await globPromise(pattern);
-  const fileBuffers = await Promise.all(filePaths.map((fp) => readFile(fp)));
+  const supportedFiles = filePaths.filter((fp) =>
+    supportedFilePaths.some((ext) => fp.endsWith(ext))
+  );
+  const fileBuffers = await Promise.all(
+    supportedFiles.map((fp) => readFile(fp))
+  );
   const fileStrings = fileBuffers.map((buf) => String(buf));
-  return fileStrings.map((s, i) => ({ content: s, name: filePaths[i] }));
+  return fileStrings.map((s, i) => ({ content: s, name: supportedFiles[i] }));
 }
 
 export function findGraphqlDocuments({

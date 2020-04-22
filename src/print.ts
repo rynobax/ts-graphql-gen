@@ -26,7 +26,7 @@ function printOperation({
   const inner = res.slice(res.indexOf(":") + 2);
 
   return `
-  type ${typeName} = ${inner}
+  export type ${typeName} = ${inner}
   `;
 }
 
@@ -38,7 +38,7 @@ function printVariables({
   if (variables.length === 0) return "";
   const typeName = name + suffix + "Variables";
   return `
-  type ${typeName} = {
+  export type ${typeName} = {
     ${variableTypeLeafsToString(variables)}
   }
   `;
@@ -129,12 +129,30 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
 // This also removes duplicate fields
 function mergeLeafs(leafs: PrintTreeLeaf[]): PrintTreeLeaf[] {
   const map: Record<string, PrintTreeLeaf> = {};
+
   leafs.forEach((leaf) => {
     const leafKey = getLeafKey(leaf);
     if (!map[leafKey]) map[leafKey] = leaf;
     else map[leafKey].leafs.push(...leaf.leafs);
   });
-  let merged = Object.values(map);
+
+  let arr = Object.entries(map);
+
+  // If we have a more generic version of a key, remove the base version
+  // eg. we throw out key "id | SomeInterface" if key "id" exists
+  arr = arr.filter(
+    ([k]) =>
+      // We keep key if the following never happens
+      !arr.some(
+        ([otherKey]) =>
+          // the element is not the same
+          otherKey !== k &&
+          // but there is a more generic version of this
+          k.startsWith(otherKey)
+      )
+  );
+
+  let merged = arr.map((e) => e[1]);
 
   // We render __typename differently from other types, so remove it
   merged = merged.filter((l) => l.key !== "__typename");
@@ -142,7 +160,8 @@ function mergeLeafs(leafs: PrintTreeLeaf[]): PrintTreeLeaf[] {
   return merged;
 }
 
-const getLeafKey = (l: PrintTreeLeaf) => `${l.key} | ${l.condition}`;
+const getLeafKey = (l: PrintTreeLeaf) =>
+  l.condition ? `${l.key} | ${l.condition}` : `${l.key}`;
 
 function listIfNecessary(v: SchemaType, content: string) {
   if (!v.list) return content;

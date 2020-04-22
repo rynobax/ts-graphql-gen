@@ -34,13 +34,13 @@ test("input type", () => {
   }
   `,
     `
-    type CoolInput = {
+    export type CoolInput = {
       num: number;
       str: string | null;
       foo: ComplexInput | null;
     };
 
-    type ComplexInput = {
+    export type ComplexInput = {
       bar: boolean;
     };
     `

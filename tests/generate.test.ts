@@ -62,7 +62,7 @@ test("basic", () => {
       }`,
     ],
     `
-    type MeQuery = {
+    export type MeQuery = {
       __typename: 'Query';
       me: {
         __typename: 'User';
@@ -86,7 +86,7 @@ test("list", () => {
         }`,
     ],
     `
-      type MeQuery = {
+    export type MeQuery = {
         __typename: 'Query';
         me: {
           __typename: 'User';
@@ -112,7 +112,7 @@ test("list combinations", () => {
         }`,
     ],
     `
-      type ListTestsQuery = {
+    export type ListTestsQuery = {
         __typename: 'Query';
         testing: {
           __typename: 'Testing';
@@ -148,7 +148,7 @@ test("nested users", () => {
       }`,
     ],
     `
-    type MyFriendsQuery = {
+    export type MyFriendsQuery = {
       __typename: 'Query';
       me: {
         __typename: "User";
@@ -185,7 +185,7 @@ test("__typename", () => {
       }`,
     ],
     `
-    type MeQuery = {
+    export type MeQuery = {
       __typename: 'Query';
       me: {
         __typename: 'User';
@@ -214,7 +214,7 @@ test("basic fragment", () => {
       `,
     ],
     `
-    type MeQuery = {
+    export type MeQuery = {
       __typename: 'Query';
       me: {
         __typename: 'User';
@@ -224,7 +224,7 @@ test("basic fragment", () => {
       }
     }
 
-    type BioFragment = {
+    export type BioFragment = {
       __typename: 'User';
       bio: string | null;
       email: string | null;
@@ -251,7 +251,7 @@ test("fragment with object", () => {
       `,
     ],
     `
-    type MeQuery = {
+    export type MeQuery = {
       __typename: 'Query';
       me: {
         __typename: 'User';
@@ -262,7 +262,7 @@ test("fragment with object", () => {
       }
     }
 
-    type FriendsFragment = {
+    export type FriendsFragment = {
       __typename: 'User';
       friends: Array<{
         __typename: 'User';
@@ -297,7 +297,7 @@ test("multiple fragments", () => {
       `,
     ],
     `
-    type MeQuery = {
+    export type MeQuery = {
       __typename: 'Query';
       me: {
         __typename: 'User';
@@ -311,13 +311,13 @@ test("multiple fragments", () => {
       }
     }
 
-    type BioFragment = {
+    export type BioFragment = {
       __typename: 'User';
       bio: string | null;
       email: string | null;
     }
 
-    type FriendsFragment = {
+    export type FriendsFragment = {
       __typename: 'User';
       friends: Array<{
         __typename: 'User';
@@ -353,7 +353,7 @@ test("nested fragments", () => {
       `,
     ],
     `
-    type MeQuery = {
+    export type MeQuery = {
       __typename: 'Query';
       me: {
         __typename: 'User';
@@ -366,7 +366,7 @@ test("nested fragments", () => {
       }
     }
 
-    type FriendsFragment = {
+    export type FriendsFragment = {
       __typename: "User";
       friends: Array<{
         __typename: "User";
@@ -376,7 +376,7 @@ test("nested fragments", () => {
       }>;
     };
 
-    type BioFragment = {
+    export type BioFragment = {
       __typename: "User";
       bio: string | null;
       email: string | null;
@@ -405,7 +405,7 @@ test("Duplicated fields", () => {
       `,
     ],
     `
-    type MeQuery = {
+    export type MeQuery = {
       __typename: 'Query';
       me: {
         __typename: 'User';
@@ -414,7 +414,7 @@ test("Duplicated fields", () => {
       }
     }
 
-    type DuplicateFragFragment = {
+    export type DuplicateFragFragment = {
       __typename: "User";
       email: string | null;
       id: string;
@@ -467,7 +467,7 @@ test("interface no spread", () => {
       `,
     ],
     `
-    type DogQuery = {
+    export type DogQuery = {
       __typename: 'Query';
       dog: {
         __typename: 'Dog';
@@ -494,7 +494,7 @@ test("interface no spread 2", () => {
       `,
     ],
     `
-    type AnimalQuery = {
+    export type AnimalQuery = {
       __typename: 'Query';
       animal: {
         __typename: 'Cat';
@@ -530,7 +530,7 @@ test("interface spread", () => {
       `,
     ],
     `
-    type AnimalQuery = {
+    export type AnimalQuery = {
       __typename: 'Query';
       animal: {
         __typename: 'Cat';
@@ -544,6 +544,38 @@ test("interface spread", () => {
         id: string;
       }
     }
+    `
+  );
+});
+
+test("interface duplicates", () => {
+  runTest(
+    interfaceSchema,
+    [
+      `
+      query Animal {
+        animal {
+          id
+          ... on Dog {
+            id
+          }
+        }
+      }
+      `,
+    ],
+    `
+    export type AnimalQuery = {
+      __typename: "Query";
+      animal:
+        | {
+            __typename: "Cat";
+            id: string;
+          }
+        | {
+            __typename: "Dog";
+            id: string;
+          };
+    };
     `
   );
 });
@@ -591,7 +623,7 @@ test("union basic", () => {
       `,
     ],
     `
-    type AnimalQuery = {
+    export type AnimalQuery = {
       __typename: 'Query';
       animal: {
         __typename: 'Cat';
@@ -627,7 +659,7 @@ test("union list", () => {
       `,
     ],
     `
-    type AnimalsQuery = {
+    export type AnimalsQuery = {
       __typename: 'Query';
       animals: Array<{
         __typename: 'Cat';
@@ -712,7 +744,7 @@ test("nested unions", () => {
       `,
     ],
     `
-    type GetAnimalQuery = {
+    export type GetAnimalQuery = {
       __typename: 'Query';
       animal: {
         __typename: 'Animal';
@@ -731,7 +763,7 @@ test("nested unions", () => {
       }
     }
 
-    type DogAgeFragment = {
+    export type DogAgeFragment = {
       __typename: 'Cat';
     } | {
       __typename: 'Dog';
@@ -808,7 +840,7 @@ test("union and interface", () => {
       `,
     ],
     `
-    type GetAnimalQuery = {
+    export type GetAnimalQuery = {
       __typename: 'Query';
       animal: {
         __typename: 'Cat';
@@ -858,7 +890,7 @@ test("multiple documents", () => {
       }`,
     ],
     `
-    type MeQuery = {
+    export type MeQuery = {
       __typename: 'Query';
       me: {
         __typename: 'User';
@@ -867,7 +899,7 @@ test("multiple documents", () => {
       }
     }
 
-    type MyFriendsQuery = {
+    export type MyFriendsQuery = {
       __typename: 'Query';
       me: {
         __typename: 'User';
@@ -895,7 +927,7 @@ test("renaming field", () => {
       }`,
     ],
     `
-    type MeQuery = {
+    export type MeQuery = {
       __typename: 'Query';
       me: {
         __typename: 'User';
@@ -919,7 +951,7 @@ test("simple query argument", () => {
       }`,
     ],
     `    
-    type UserQuery = {
+    export type UserQuery = {
       __typename: 'Query';
       user: {
         __typename: 'User';
@@ -927,7 +959,7 @@ test("simple query argument", () => {
       }
     }
 
-    type UserQueryVariables = {
+    export type UserQueryVariables = {
       id: string;
     }
     `
@@ -968,17 +1000,17 @@ test("complex query argument", () => {
     }`,
     ],
     `
-    type UserSearchInput = {           
+    export type UserSearchInput = {           
       name: UserSearchNameInput | null;
       email: string | null;            
     };                                 
                                         
-    type UserSearchNameInput = {       
+    export type UserSearchNameInput = {       
       first: string;                   
       last: string;                    
     };                                 
                                         
-    type UsersQuery = {
+    export type UsersQuery = {
       __typename: 'Query';
       users: Array<{
         __typename: 'User';
@@ -986,7 +1018,7 @@ test("complex query argument", () => {
       }>
     }
 
-    type UsersQueryVariables = {
+    export type UsersQueryVariables = {
       input: UserSearchInput;
       resultCount: number | null;
     }
@@ -1018,7 +1050,7 @@ test("simple mutation", () => {
     `,
     ],
     `                                 
-    type ClaimIdMutation = {
+    export type ClaimIdMutation = {
       __typename: 'Mutation';
       claimId: number;
     }
@@ -1078,18 +1110,18 @@ test("complex mutation", () => {
     `,
     ],
     `
-    type CreateUserInput = {
+    export type CreateUserInput = {
       age: number;
       email: string | null;
       name: NameInput;
     };
 
-    type NameInput = {      
+    export type NameInput = {      
       first: string;
       last: string;
     };
 
-    type NewUserMutation = {
+    export type NewUserMutation = {
       __typename: 'Mutation';
       createUser: {
         __typename: 'User';
@@ -1102,7 +1134,7 @@ test("complex mutation", () => {
       };
     }
 
-    type NewUserMutationVariables = {
+    export type NewUserMutationVariables = {
       input: CreateUserInput;
     }
     `
@@ -1140,9 +1172,9 @@ test("enum query", () => {
       }`,
     ],
     `
-    type AccountType = 'ADMIN' | 'NORMAL';
+    export type AccountType = 'ADMIN' | 'NORMAL';
 
-    type UserQuery = {
+    export type UserQuery = {
       __typename: 'Query';
       user: {
         __typename: 'User';
@@ -1189,9 +1221,9 @@ test("enum mutation", () => {
       }`,
     ],
     `
-    type AccountType = "ADMIN" | "NORMAL";
+    export type AccountType = "ADMIN" | "NORMAL";
 
-    type CreateUserMutation = {
+    export type CreateUserMutation = {
       __typename: "Mutation";
       createUser: {
         __typename: "User";
@@ -1200,7 +1232,7 @@ test("enum mutation", () => {
       };
     };
 
-    type CreateUserMutationVariables = {
+    export type CreateUserMutationVariables = {
       type: AccountType;
     };
     `
