@@ -197,16 +197,10 @@ function fragmentToTree(
 
   const rootTypeName = definition.typeCondition.name.value;
 
-  console.log(definition);
-
-  const currentType = findCurrentTypeInMap(typeMap, {
-    root: rootTypeName,
-    steps: [],
-  });
   const returnTypeTree: PrintTreeLeaf = fieldToLeaf({
     typeKey: rootTypeName,
     fieldName: name,
-    currentType,
+    currentType: { list: false, nullable: false, value: rootTypeName },
     selectionSet: definition.selectionSet,
     typeMap,
     fragments,

@@ -643,7 +643,7 @@ test("union list", () => {
   );
 });
 
-test.only("nested unions", () => {
+test("nested unions", () => {
   runTest(
     `
       schema {
@@ -732,16 +732,16 @@ test.only("nested unions", () => {
     }
 
     type DogAgeFragment = {
-      __typename: "AnimalType";
-      age:
-        | {
-            __typename: "Known";
-            months: number;
-          }
-        | {
-            __typename: "Unknown";
-          };
-    };
+      __typename: 'Cat';
+    } | {
+      __typename: 'Dog';
+      age:  {
+        __typename: 'Known';
+        months: number;
+      } | {
+        __typename: 'Unknown';
+      }
+    }
     `
   );
 });

@@ -177,7 +177,6 @@ export function findCurrentTypeInMap(
   if (history.steps[history.steps.length - 1] === "__typename")
     return { value: "THIS_SHOULD_NOT_BE_USED", list: false, nullable: false };
 
-  console.log({ history });
   let last = typeMap.returnTypes.get(history.root);
   let lastValue: SchemaType | null = null;
   history.steps.forEach((k) => {
