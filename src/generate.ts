@@ -132,7 +132,6 @@ function definitionNodeToTrees(
   else return reportErrors(errors, document);
 }
 
-// A query, mutation, or subscription
 function operationToTree(
   definition: OperationDefinitionNode,
   typeMap: SchemaTypeMap,
@@ -143,20 +142,26 @@ function operationToTree(
   const name = definition.name.value;
   const suffix = capitalize(definition.operation);
 
-  const returnTypeTree = flatMap(
-    definition.selectionSet.selections.map((node) =>
-      nodeToLeafs(
-        node,
-        typeMap,
-        fragments,
-        {
-          root: suffix,
-          steps: [],
-        },
-        null
+  const returnTypeTree: PrintTreeLeaf = {
+    condition: null,
+    key: suffix,
+    leafs: flatMap(
+      definition.selectionSet.selections.map((node) =>
+        nodeToLeafs(
+          node,
+          typeMap,
+          fragments,
+          {
+            root: suffix,
+            steps: [],
+          },
+          null
+        )
       )
-    )
-  );
+    ),
+    type: { list: false, nullable: false, value: suffix },
+    typeInfo: null,
+  };
 
   const variablesTypeTree = definition.variableDefinitions
     ? flatMap(

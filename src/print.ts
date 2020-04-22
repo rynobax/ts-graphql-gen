@@ -16,15 +16,17 @@ export function treeToString(tree: OperationPrintTree): string {
 function printOperation({
   name,
   suffix,
-  rootTypeName,
-  returnTypeTree: result,
+  returnTypeTree,
 }: OperationPrintTree): string {
   const typeName = name + suffix;
+
+  // The result is going to include a "key" (eg. Query: {}) that we
+  // can just throw away
+  const res = returnTypeLeafsToString([returnTypeTree]);
+  const inner = res.slice(res.indexOf(":") + 2);
+
   return `
-  type ${typeName} = {
-    __typename: "${rootTypeName}";
-    ${returnTypeLeafsToString(result)}
-  }
+  type ${typeName} = ${inner}
   `;
 }
 
@@ -51,7 +53,6 @@ function variableTypeLeafsToString(leafs: PrintTreeLeaf[]) {
 function returnTypeLeafsToString(leafs: PrintTreeLeaf[]) {
   // Sort leafs alphabetically
   const sorted = mergeLeafs(leafs).sort((a, b) => a.key.localeCompare(b.key));
-  console.log({ leafs, sorted });
   return sorted.map(returnTypeLeafToString).join(EOL);
 }
 

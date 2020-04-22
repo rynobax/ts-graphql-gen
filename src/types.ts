@@ -30,7 +30,7 @@ export interface OperationPrintTree {
   suffix: string;
   // The __typename of the operation
   rootTypeName: string;
-  returnTypeTree: PrintTreeLeaf[];
+  returnTypeTree: PrintTreeLeaf;
   variablesTypeTree: PrintTreeLeaf[];
   inputTypeTree: PrintTreeLeaf[];
 }
