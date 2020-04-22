@@ -931,3 +931,118 @@ test("complex query argument", () => {
     `
   );
 });
+
+test("simple mutation", () => {
+  runTest(
+    `
+  schema {
+    query: Query
+    mutation: Mutation
+  }
+
+  type Query {
+    id: Int
+  }
+
+  type Mutation {
+    claimId: Int!
+  }
+  `,
+    [
+      `
+    mutation ClaimId {
+      claimId
+    }
+    `,
+    ],
+    `                                 
+    type ClaimIdMutation = {
+      __typename: 'Mutation';
+      claimId: number;
+    }
+    `
+  );
+});
+
+test("complex mutation", () => {
+  runTest(
+    `
+  schema {
+    query: Query
+    mutation: Mutation
+  }
+
+  type Query {
+    id: Int
+  }
+
+  type Mutation {
+    createUser(input: CreateUserInput): User!
+  }
+
+  type User {
+    id: String!
+    email: String
+    name: Name!
+  }
+
+  type Name {
+    first: String!
+    last: String!
+  }
+
+  input CreateUserInput {
+    age: Int!
+    email: String
+    name: NameInput!
+  }
+
+  input NameInput {
+    first: String!
+    last: String!
+  }
+  `,
+    [
+      `
+    mutation NewUser($input: CreateUserInput!) {
+      createUser(input: $input) {
+        id
+        email
+        name {
+          first
+        }
+      }
+    }
+    `,
+    ],
+    `
+    type CreateUserInput = {
+      age: number;
+      email: string | null;
+      name: NameInput;
+    };
+
+    type NameInput = {      
+      first: string;
+      last: string;
+    };
+
+    type NewUserMutation = {
+      __typename: 'Mutation';
+      createUser: {
+        __typename: 'User';
+        email: string | null;
+        id: string;
+        name: {
+          __typename: 'Name';
+          first: string;
+        }
+      };
+    }
+
+    type NewUserMutationVariables = {
+      input: CreateUserInput;
+    }
+    `
+  );
+});

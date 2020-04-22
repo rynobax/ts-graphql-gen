@@ -63,6 +63,7 @@ function docToTrees(
 ): Array<OperationPrintTree | null> {
   const { content } = document;
   const documentNode = parse(content);
+  // TODO: This throws if there is no Query type.  Should probably catch and rethrow
   const validationErrors = validate(schema, documentNode);
   if (validationErrors.length > 0)
     reportErrors(
