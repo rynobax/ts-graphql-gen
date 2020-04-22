@@ -4,6 +4,7 @@ import {
   InputObjectTypeDefinitionNode,
   TypeNode,
   ListTypeNode,
+  EnumTypeDefinitionNode,
 } from "graphql";
 import { EOL } from "os";
 import { schemaTypeToString } from "./util";
@@ -15,10 +16,25 @@ function isInputObjectType(
   return node.kind === "InputObjectTypeDefinition";
 }
 
+function isEnumType(node: DefinitionNode): node is EnumTypeDefinitionNode {
+  return node.kind === "EnumTypeDefinition";
+}
+
 export function globalTypesToString(schema: DocumentNode): string {
-  // TODO: Might be nice to print other stuff as well
+  // TODO: Might be nice to print other stuff as well (fragments, types)
   const inputTypes = schema.definitions.filter(isInputObjectType);
-  return inputTypes.map(inputTypeToString).join(EOL);
+  const enumTypes = schema.definitions.filter(isEnumType);
+  return [
+    ...inputTypes.map(inputTypeToString),
+    ...enumTypes.map(enumTypeToString),
+  ].join(EOL);
+}
+
+function enumTypeToString(node: EnumTypeDefinitionNode): string {
+  const name = node.name.value;
+  if (!node.values) throw Error(`Enum ${name} has no values!`);
+  const value = node.values.map((v) => `"${v.name.value}"`).join(" | ");
+  return `type ${name} = ${value};`;
 }
 
 function inputTypeToString(node: InputObjectTypeDefinitionNode): string {

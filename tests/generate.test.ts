@@ -1046,3 +1046,48 @@ test("complex mutation", () => {
     `
   );
 });
+
+test("enum", () => {
+  runTest(
+    `
+    schema {
+      query: Query
+    }
+
+    type Query {
+      user: User!
+    }
+    
+    type User {
+      id: String!
+      accountType: AccountType!
+    }
+
+    enum AccountType {
+      ADMIN
+      NORMAL
+    }
+    `,
+    [
+      `
+      query User {
+        user {
+          accountType
+          id
+        }
+      }`,
+    ],
+    `
+    type AccountType = 'ADMIN' | 'NORMAL';
+
+    type UserQuery = {
+      __typename: 'Query';
+      user: {
+        __typename: 'User';
+        accountType: AccountType;
+        id: string;
+      }
+    }
+    `
+  );
+});

@@ -74,6 +74,8 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         return;
       case "InputObjectTypeDefinition":
         return;
+      case "EnumTypeDefinition":
+        return;
       default:
         throw Error(`Unknown kind parsing schema: ${def.kind}`);
     }
