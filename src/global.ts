@@ -5,7 +5,6 @@ import {
   TypeNode,
   ListTypeNode,
   EnumTypeDefinitionNode,
-  FragmentDefinitionNode,
 } from "graphql";
 import { EOL } from "os";
 import { schemaTypeToString } from "./util";
@@ -21,19 +20,13 @@ function isEnumType(node: DefinitionNode): node is EnumTypeDefinitionNode {
   return node.kind === "EnumTypeDefinition";
 }
 
-function isFragmentType(node: DefinitionNode): node is FragmentDefinitionNode {
-  return node.kind === "FragmentDefinition";
-}
-
 export function globalTypesToString(schema: DocumentNode): string {
   // TODO: Might be nice to print other stuff as well (fragments, types)
   const inputTypes = schema.definitions.filter(isInputObjectType);
   const enumTypes = schema.definitions.filter(isEnumType);
-  const fragmentTypes = schema.definitions.filter(isFragmentType);
   return [
     ...inputTypes.map(inputTypeToString),
     ...enumTypes.map(enumTypeToString),
-    ...fragmentTypes.map(fragmentTypeToString),
   ].join(EOL);
 }
 
@@ -42,11 +35,6 @@ function enumTypeToString(node: EnumTypeDefinitionNode): string {
   if (!node.values) throw Error(`Enum ${name} has no values!`);
   const value = node.values.map((v) => `"${v.name.value}"`).join(" | ");
   return `type ${name} = ${value};`;
-}
-
-function fragmentTypeToString(node: FragmentDefinitionNode): string {
-  console.log(node);
-  return ``;
 }
 
 function inputTypeToString(node: InputObjectTypeDefinitionNode): string {

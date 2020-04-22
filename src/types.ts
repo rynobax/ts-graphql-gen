@@ -14,7 +14,7 @@ export interface SchemaTypeMap {
   returnTypes: Map<string, ReturnTypeInfo>;
 }
 
-interface ReturnTypeInfo {
+export interface ReturnTypeInfo {
   // Types that implement this type
   typesThatImplementThis: Set<string>;
   // Types that this type implements
@@ -23,10 +23,13 @@ interface ReturnTypeInfo {
 }
 
 export interface OperationPrintTree {
+  // TODO: Should probably just merge name and suffix into one thing
   // Name of the operation
   name: string;
-  // Type of the operation (query, mutation, subscription)
-  operationType: string;
+  // Type of the operation (query, mutation, subscription, fragment)
+  suffix: string;
+  // The __typename of the operation
+  rootTypeName: string;
   returnTypeTree: PrintTreeLeaf[];
   variablesTypeTree: PrintTreeLeaf[];
   inputTypeTree: PrintTreeLeaf[];
@@ -37,6 +40,7 @@ export interface PrintTreeLeaf {
   type: SchemaType;
   // Information about the type of the node
   typeInfo: ReturnTypeInfo | null;
+  // TODO: Better name would probably make things clearer
   // The result field name (could be renamed from field)
   key: string;
   // The possible versions that could exist

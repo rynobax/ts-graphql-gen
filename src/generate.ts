@@ -45,7 +45,6 @@ export function generateTypesString(
   const schemaNodes = parse(schemaText);
   const typeMap = computeSchemaTypeMap(schemaNodes);
   const schema = buildSchema(schemaText);
-  const globalTypes = globalTypesToString(schemaNodes);
   const nodes = documents.map((doc) => documentToDefinitionNodes(doc, schema));
 
   const allFragments = flatMap(
@@ -63,6 +62,8 @@ export function generateTypesString(
       return trees.filter(nonNull).map(treeToString).join(EOL);
     })
     .join(EOL);
+
+  const globalTypes = globalTypesToString(schemaNodes);
   return [globalTypes, result].join(EOL);
 }
 
@@ -116,8 +117,8 @@ function definitionNodeToTrees(
         case "OperationDefinition":
           return operationToTree(node, typeMap, fragments);
         case "FragmentDefinition":
-          // TODO: Maybe write these out someday
-          return null;
+          // These are written out by global.ts
+          return fragmentToTree(node, typeMap, fragments);
         default:
           throw Error(`Unimplemented node kind ${node.kind}`);
       }
@@ -133,16 +134,17 @@ function definitionNodeToTrees(
 
 // A query, mutation, or subscription
 function operationToTree(
-  node: OperationDefinitionNode,
+  definition: OperationDefinitionNode,
   typeMap: SchemaTypeMap,
   fragments: FragmentDefinitionNode[]
 ): OperationPrintTree {
-  if (!node.name) throw Error(`Found a ${node.operation} without a name`);
-  const name = node.name.value;
-  const suffix = capitalize(node.operation);
+  if (!definition.name)
+    throw Error(`Found a ${definition.operation} without a name`);
+  const name = definition.name.value;
+  const suffix = capitalize(definition.operation);
 
   const returnTypeTree = flatMap(
-    node.selectionSet.selections.map((node) =>
+    definition.selectionSet.selections.map((node) =>
       nodeToLeafs(
         node,
         typeMap,
@@ -156,17 +158,71 @@ function operationToTree(
     )
   );
 
-  const variablesTypeTree = node.variableDefinitions
-    ? flatMap(node.variableDefinitions.map((node) => variableToLeafs(node)))
+  const variablesTypeTree = definition.variableDefinitions
+    ? flatMap(
+        definition.variableDefinitions.map((node) => variableToLeafs(node))
+      )
     : [];
 
-  const inputTypeTree = node.variableDefinitions
-    ? flatMap(node.variableDefinitions.map((node) => variableToLeafs(node)))
+  const inputTypeTree = definition.variableDefinitions
+    ? flatMap(
+        definition.variableDefinitions.map((node) => variableToLeafs(node))
+      )
     : [];
 
   return {
     name,
-    operationType: suffix,
+    suffix: suffix,
+    rootTypeName: suffix,
+    returnTypeTree,
+    variablesTypeTree,
+    inputTypeTree,
+  };
+}
+
+function fragmentToTree(
+  definition: FragmentDefinitionNode,
+  typeMap: SchemaTypeMap,
+  fragments: FragmentDefinitionNode[]
+): OperationPrintTree {
+  if (!definition.name) throw Error(`Found a fragment without a name`);
+  const name = definition.name.value;
+
+  const rootTypeName = definition.typeCondition.name.value;
+
+  const returnTypeTree = flatMap(
+    definition.selectionSet.selections.map((node) =>
+      nodeToLeafs(
+        node,
+        typeMap,
+        fragments,
+        {
+          root: rootTypeName,
+          steps: [],
+        },
+        null
+      )
+    )
+  );
+
+  // TODO: Dunno if fragments can have variables
+  const variablesTypeTree = definition.variableDefinitions
+    ? flatMap(
+        definition.variableDefinitions.map((node) => variableToLeafs(node))
+      )
+    : [];
+
+  // TODO: Dunno if fragments can have inputs
+  const inputTypeTree = definition.variableDefinitions
+    ? flatMap(
+        definition.variableDefinitions.map((node) => variableToLeafs(node))
+      )
+    : [];
+
+  return {
+    name,
+    suffix: "Fragment",
+    rootTypeName: rootTypeName,
     returnTypeTree,
     variablesTypeTree,
     inputTypeTree,

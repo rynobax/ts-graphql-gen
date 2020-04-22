@@ -15,13 +15,14 @@ export function treeToString(tree: OperationPrintTree): string {
 
 function printOperation({
   name,
-  operationType,
+  suffix,
+  rootTypeName,
   returnTypeTree: result,
 }: OperationPrintTree): string {
-  const typeName = name + operationType;
+  const typeName = name + suffix;
   return `
   type ${typeName} = {
-    __typename: "${operationType}";
+    __typename: "${rootTypeName}";
     ${returnTypeLeafsToString(result)}
   }
   `;
@@ -29,11 +30,11 @@ function printOperation({
 
 function printVariables({
   name,
-  operationType,
+  suffix,
   variablesTypeTree: variables,
 }: OperationPrintTree): string {
   if (variables.length === 0) return "";
-  const typeName = name + operationType + "Variables";
+  const typeName = name + suffix + "Variables";
   return `
   type ${typeName} = {
     ${variableTypeLeafsToString(variables)}
@@ -43,13 +44,14 @@ function printVariables({
 
 function variableTypeLeafsToString(leafs: PrintTreeLeaf[]) {
   // Sort leafs alphabetically
-  const sorted = leafs.sort((a, b) => a.key.localeCompare(b.key));
+  const sorted = mergeLeafs(leafs).sort((a, b) => a.key.localeCompare(b.key));
   return sorted.map(variableTypeLeafToString).join(EOL);
 }
 
 function returnTypeLeafsToString(leafs: PrintTreeLeaf[]) {
   // Sort leafs alphabetically
-  const sorted = leafs.sort((a, b) => a.key.localeCompare(b.key));
+  const sorted = mergeLeafs(leafs).sort((a, b) => a.key.localeCompare(b.key));
+  console.log({ leafs, sorted });
   return sorted.map(returnTypeLeafToString).join(EOL);
 }
 
@@ -133,7 +135,7 @@ function mergeLeafs(leafs: PrintTreeLeaf[]): PrintTreeLeaf[] {
   });
   let merged = Object.values(map);
 
-  // We render __typename differently from other types, so removeit
+  // We render __typename differently from other types, so remove it
   merged = merged.filter((l) => l.key !== "__typename");
 
   return merged;

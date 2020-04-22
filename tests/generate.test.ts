@@ -223,6 +223,12 @@ test("basic fragment", () => {
         id: string;
       }
     }
+
+    type BioFragment = {
+      __typename: 'User';
+      bio: string | null;
+      email: string | null;
+    }
     `
   );
 });
@@ -254,6 +260,14 @@ test("fragment with object", () => {
           id: string;
         }>
       }
+    }
+
+    type FriendsFragment = {
+      __typename: 'User';
+      friends: Array<{
+        __typename: 'User';
+        id: string;
+      }>
     }
     `
   );
@@ -296,6 +310,20 @@ test("multiple fragments", () => {
         id: string;
       }
     }
+
+    type BioFragment = {
+      __typename: 'User';
+      bio: string | null;
+      email: string | null;
+    }
+
+    type FriendsFragment = {
+      __typename: 'User';
+      friends: Array<{
+        __typename: 'User';
+        id: string;
+      }>
+    }
     `
   );
 });
@@ -337,6 +365,22 @@ test("nested fragments", () => {
         }>
       }
     }
+
+    type FriendsFragment = {
+      __typename: "User";
+      friends: Array<{
+        __typename: "User";
+        bio: string | null;
+        email: string | null;
+        id: string;
+      }>;
+    };
+
+    type BioFragment = {
+      __typename: "User";
+      bio: string | null;
+      email: string | null;
+    };
     `
   );
 });
@@ -369,6 +413,12 @@ test("Duplicated fields", () => {
         id: string;
       }
     }
+
+    type DuplicateFragFragment = {
+      __typename: "User";
+      email: string | null;
+      id: string;
+    };
     `
   );
 });
@@ -593,7 +643,7 @@ test("union list", () => {
   );
 });
 
-test("nested unions", () => {
+test.only("nested unions", () => {
   runTest(
     `
       schema {
@@ -680,6 +730,18 @@ test("nested unions", () => {
         }
       }
     }
+
+    type DogAgeFragment = {
+      __typename: "AnimalType";
+      age:
+        | {
+            __typename: "Known";
+            months: number;
+          }
+        | {
+            __typename: "Unknown";
+          };
+    };
     `
   );
 });
