@@ -59,12 +59,9 @@ function returnTypeLeafsToString(leafs: PrintTreeLeaf[]) {
 function variableTypeLeafToString(leaf: PrintTreeLeaf): string {
   if (leaf.leafs.length > 0) {
     // input object field
-    const typename =
-      leaf.typeInfo && leaf.typeInfo.typesThatImplementThis.size > 0
-        ? Array.from(leaf.typeInfo.typesThatImplementThis)
-            .map((e) => `"${e}"`)
-            .join(" | ")
-        : `"${leaf.type.value}"`;
+    const typename = leaf.typesThatImplementThis
+      ? leaf.typesThatImplementThis.map((e) => `"${e}"`).join(" | ")
+      : `"${leaf.type.value}"`;
     let innerText = `{
       __typename: ${typename};
       ${returnTypeLeafsToString(leaf.leafs)}
@@ -106,12 +103,9 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
       return `${leaf.fieldName}: ${listIfNecessary(leaf.type, innerText)};`;
     } else {
       // Single possible type
-      const typename =
-        leaf.typeInfo && leaf.typeInfo.typesThatImplementThis.size > 0
-          ? Array.from(leaf.typeInfo.typesThatImplementThis)
-              .map((e) => `"${e}"`)
-              .join(" | ")
-          : `"${leaf.type.value}"`;
+      const typename = leaf.typesThatImplementThis
+        ? leaf.typesThatImplementThis.map((e) => `"${e}"`).join(" | ")
+        : `"${leaf.type.value}"`;
       const innerText = `{
         __typename: ${typename};
         ${returnTypeLeafsToString(leafs)}

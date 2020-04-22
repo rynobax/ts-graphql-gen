@@ -161,7 +161,7 @@ function operationToTree(
       )
     ),
     type: { list: false, nullable: false, value: suffix },
-    typeInfo: null,
+    typesThatImplementThis: null,
   };
 
   const variablesTypeTree = definition.variableDefinitions
@@ -206,26 +206,12 @@ function fragmentToTree(
     condition: null,
   });
 
-  // TODO: Dunno if fragments can have variables
-  const variablesTypeTree = definition.variableDefinitions
-    ? flatMap(
-        definition.variableDefinitions.map((node) => variableToLeafs(node))
-      )
-    : [];
-
-  // TODO: Dunno if fragments can have inputs
-  const inputTypeTree = definition.variableDefinitions
-    ? flatMap(
-        definition.variableDefinitions.map((node) => variableToLeafs(node))
-      )
-    : [];
-
   return {
     outputTypeName: name + "Fragment",
     rootTypeName: rootTypeName,
     returnTypeTree,
-    variablesTypeTree,
-    inputTypeTree,
+    variablesTypeTree: [],
+    inputTypeTree: [],
   };
 }
 
@@ -309,12 +295,16 @@ function fieldToLeaf({
   condition,
 }: FieldToLeafParams): PrintTreeLeaf {
   if (selectionSet) {
+    // Node is an object
     const typeInfo = typeMap.get(currentType.value);
     if (!typeInfo) throw Error(`Missing typeInfo for ${typeKey}`);
     return {
       fieldName: fieldName,
       type: currentType,
-      typeInfo,
+      typesThatImplementThis:
+        typeInfo.typesThatImplementThis.size > 0
+          ? Array.from(typeInfo.typesThatImplementThis)
+          : null,
       condition,
       leafs: flatMap([
         ...Array.from(typeInfo.typesThatImplementThis).map((cond) =>
@@ -330,7 +320,7 @@ function fieldToLeaf({
     return {
       fieldName,
       type: currentType,
-      typeInfo: null,
+      typesThatImplementThis: null,
       condition,
       leafs: [],
     };
@@ -344,7 +334,6 @@ function variableToLeafs(node: VariableDefinitionNode): PrintTreeLeaf {
     fieldName,
     leafs: [],
     type: typeNodeToSchemaValue(node.type),
-    // TODO: Might need to set this
-    typeInfo: null,
+    typesThatImplementThis: null,
   };
 }

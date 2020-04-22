@@ -37,8 +37,8 @@ export interface OperationPrintTree {
 export interface PrintTreeLeaf {
   // The name of the type of this node
   type: SchemaType;
-  // Information about the type of the node
-  typeInfo: ReturnTypeInfo | null;
+  // Types that implement this type, used for typenames
+  typesThatImplementThis: string[] | null;
   // The result field name (could be renamed from field)
   fieldName: string;
   // The possible versions that could exist
