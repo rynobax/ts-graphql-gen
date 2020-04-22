@@ -7,12 +7,12 @@ import {
   UnionTypeDefinitionNode,
 } from "graphql";
 
-import { SchemaType, SchemaTypeMap, History } from "./types";
+import { SchemaTypeSummary, ObjectTypeInfoMap, History } from "./types";
 
 function getListSchemaValue(
   node: ListTypeNode,
   listIsNullable: boolean
-): SchemaType {
+): SchemaTypeSummary {
   const listType = node.type;
   switch (listType.kind) {
     case "NamedType":
@@ -37,7 +37,7 @@ function getListSchemaValue(
   }
 }
 
-export function typeNodeToSchemaValue(type: TypeNode): SchemaType {
+export function typeNodeToSchemaValue(type: TypeNode): SchemaTypeSummary {
   switch (type.kind) {
     case "NonNullType":
       const nnType = type;
@@ -58,15 +58,15 @@ export function typeNodeToSchemaValue(type: TypeNode): SchemaType {
   }
 }
 
-export function computeSchemaTypeMap(document: DocumentNode) {
-  const typeMap: SchemaTypeMap = new Map();
+export function computeObjectTypeMap(document: DocumentNode) {
+  const objectTypeMap: ObjectTypeInfoMap = new Map();
 
   document.definitions.forEach((def) => {
     switch (def.kind) {
       case "ObjectTypeDefinition":
       case "InterfaceTypeDefinition":
       case "UnionTypeDefinition":
-        addObjectToMap(typeMap, def);
+        addObjectToMap(objectTypeMap, def);
         return;
       case "InputObjectTypeDefinition":
       case "EnumTypeDefinition":
@@ -85,11 +85,11 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         );
     }
   });
-  return typeMap;
+  return objectTypeMap;
 }
 
 function addObjectToMap(
-  typeMap: SchemaTypeMap,
+  objectTypeMap: ObjectTypeInfoMap,
   def:
     | ObjectTypeDefinitionNode
     | InterfaceTypeDefinitionNode
@@ -97,14 +97,14 @@ function addObjectToMap(
 ) {
   const name = def.name.value;
 
-  if (!typeMap.has(name)) initializeReturnType(typeMap, name);
+  if (!objectTypeMap.has(name)) initializeObjectType(objectTypeMap, name);
 
   // Can use nonNull assertion because we just initialized it above
   const {
     fields,
     typesThatImplementThis,
     typesThatThisImplements,
-  } = typeMap.get(name)!;
+  } = objectTypeMap.get(name)!;
 
   // Objects and Interfaces
   if ("fields" in def && def.fields && def.fields.length > 0) {
@@ -130,9 +130,9 @@ function addObjectToMap(
       typesThatThisImplements.add(typeThatThisImplements);
 
       // Add this to the interface it implements
-      if (!typeMap.has(typeThatThisImplements))
-        initializeReturnType(typeMap, typeThatThisImplements);
-      typeMap
+      if (!objectTypeMap.has(typeThatThisImplements))
+        initializeObjectType(objectTypeMap, typeThatThisImplements);
+      objectTypeMap
         // Can nonNull assert because it gets initialized above
         .get(typeThatThisImplements)!
         .typesThatImplementThis.add(name);
@@ -148,9 +148,9 @@ function addObjectToMap(
       typesThatImplementThis.add(typeThatThisIsImplementedBy);
 
       // Add this to the interface it implements
-      if (!typeMap.has(typeThatThisIsImplementedBy))
-        initializeReturnType(typeMap, typeThatThisIsImplementedBy);
-      typeMap
+      if (!objectTypeMap.has(typeThatThisIsImplementedBy))
+        initializeObjectType(objectTypeMap, typeThatThisIsImplementedBy);
+      objectTypeMap
         // Can nonNull assert because it gets initialized above
         .get(typeThatThisIsImplementedBy)!
         .typesThatThisImplements.add(name);
@@ -158,8 +158,11 @@ function addObjectToMap(
   }
 }
 
-function initializeReturnType(typeMap: SchemaTypeMap, typeName: string) {
-  typeMap.set(typeName, {
+function initializeObjectType(
+  objectTypeMap: ObjectTypeInfoMap,
+  typeName: string
+) {
+  objectTypeMap.set(typeName, {
     fields: new Map(),
     typesThatImplementThis: new Set(),
     typesThatThisImplements: new Set(),
@@ -167,15 +170,15 @@ function initializeReturnType(typeMap: SchemaTypeMap, typeName: string) {
 }
 
 // TODO: Rename this
-export function findCurrentTypeInMap(
-  typeMap: SchemaTypeMap,
+export function findTypeSummaryFromMap(
+  objectTypeMap: ObjectTypeInfoMap,
   history: History
-): SchemaType {
+): SchemaTypeSummary {
   if (history.steps[history.steps.length - 1] === "__typename")
     return { value: "THIS_SHOULD_NOT_BE_USED", list: false, nullable: false };
 
-  let last = typeMap.get(history.root);
-  let lastValue: SchemaType | null = null;
+  let last = objectTypeMap.get(history.root);
+  let lastValue: SchemaTypeSummary | null = null;
   history.steps.forEach((k) => {
     if (k === "__typename") {
       // __typename is special, we know what it should be from the last step
@@ -205,7 +208,7 @@ export function findCurrentTypeInMap(
       const field = last.fields.get(k);
       if (!field) throw Error(`Missing field ${k} in type ${lastValue?.value}`);
       lastValue = field;
-      last = typeMap.get(lastValue.value);
+      last = objectTypeMap.get(lastValue.value);
     }
   });
   if (!lastValue) throw Error("Missing lastValue");

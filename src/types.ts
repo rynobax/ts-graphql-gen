@@ -3,7 +3,7 @@ export interface Document {
   file: string;
 }
 
-export type SchemaType = {
+export type SchemaTypeSummary = {
   value: string;
   // Whether or not the type in the list (eg User) can be null
   nullable: boolean;
@@ -11,14 +11,14 @@ export type SchemaType = {
   list: { nullable: boolean } | false;
 };
 
-export type SchemaTypeMap = Map<string, ReturnTypeInfo>;
+export type ObjectTypeInfoMap = Map<string, ObjectTypeInfo>;
 
-export interface ReturnTypeInfo {
+export interface ObjectTypeInfo {
   // Types that implement this type
   typesThatImplementThis: Set<string>;
   // Types that this type implements
   typesThatThisImplements: Set<string>;
-  fields: Map<string, SchemaType>;
+  fields: Map<string, SchemaTypeSummary>;
 }
 
 export interface OperationPrintTree {
@@ -36,7 +36,7 @@ export interface OperationPrintTree {
 
 export interface PrintTreeLeaf {
   // The name of the type of this node
-  type: SchemaType;
+  typeSummary: SchemaTypeSummary;
   // Types that implement this type, used for typenames
   typesThatImplementThis: string[] | null;
   // The result field name (could be renamed from field)

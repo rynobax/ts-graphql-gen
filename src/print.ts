@@ -1,7 +1,7 @@
 import { EOL } from "os";
 import { uniq } from "lodash";
 
-import { SchemaType, OperationPrintTree, PrintTreeLeaf } from "./types";
+import { SchemaTypeSummary, OperationPrintTree, PrintTreeLeaf } from "./types";
 import { schemaTypeToString } from "./util";
 
 function nonNull<T>(e: T | null): e is T {
@@ -61,15 +61,15 @@ function variableTypeLeafToString(leaf: PrintTreeLeaf): string {
     // input object field
     const typename = leaf.typesThatImplementThis
       ? leaf.typesThatImplementThis.map((e) => `"${e}"`).join(" | ")
-      : `"${leaf.type.value}"`;
+      : `"${leaf.typeSummary.value}"`;
     let innerText = `{
       __typename: ${typename};
       ${returnTypeLeafsToString(leaf.leafs)}
     }`;
-    return `${leaf.fieldName}: ${listIfNecessary(leaf.type, innerText)}`;
+    return `${leaf.fieldName}: ${listIfNecessary(leaf.typeSummary, innerText)}`;
   } else {
     // scalar field
-    return `${leaf.fieldName}: ${schemaTypeToString(leaf.type)};`;
+    return `${leaf.fieldName}: ${schemaTypeToString(leaf.typeSummary)};`;
   }
 }
 
@@ -100,21 +100,27 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
           }`;
         })
         .join(` |${EOL}`);
-      return `${leaf.fieldName}: ${listIfNecessary(leaf.type, innerText)};`;
+      return `${leaf.fieldName}: ${listIfNecessary(
+        leaf.typeSummary,
+        innerText
+      )};`;
     } else {
       // Single possible type
       const typename = leaf.typesThatImplementThis
         ? leaf.typesThatImplementThis.map((e) => `"${e}"`).join(" | ")
-        : `"${leaf.type.value}"`;
+        : `"${leaf.typeSummary.value}"`;
       const innerText = `{
         __typename: ${typename};
         ${returnTypeLeafsToString(leafs)}
       }`;
-      return `${leaf.fieldName}: ${listIfNecessary(leaf.type, innerText)};`;
+      return `${leaf.fieldName}: ${listIfNecessary(
+        leaf.typeSummary,
+        innerText
+      )};`;
     }
   } else {
     // scalar field
-    return `${leaf.fieldName}: ${schemaTypeToString(leaf.type)};`;
+    return `${leaf.fieldName}: ${schemaTypeToString(leaf.typeSummary)};`;
   }
 }
 
@@ -157,7 +163,7 @@ function mergeLeafs(leafs: PrintTreeLeaf[]): PrintTreeLeaf[] {
 const getLeafKey = (l: PrintTreeLeaf) =>
   l.condition ? `${l.fieldName} | ${l.condition}` : `${l.fieldName} |`;
 
-function listIfNecessary(v: SchemaType, content: string) {
+function listIfNecessary(v: SchemaTypeSummary, content: string) {
   if (!v.list) return content;
   return `Array<${content}${orNull(v.nullable)}>${orNull(v.list.nullable)}`;
 }

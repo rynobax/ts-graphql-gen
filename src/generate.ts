@@ -20,15 +20,15 @@ import { capitalize, flatMap } from "lodash";
 
 import {
   Document,
-  SchemaTypeMap,
+  ObjectTypeInfoMap,
   OperationPrintTree,
   PrintTreeLeaf,
   History,
-  SchemaType,
+  SchemaTypeSummary,
 } from "./types";
 import {
-  computeSchemaTypeMap,
-  findCurrentTypeInMap,
+  computeObjectTypeMap,
+  findTypeSummaryFromMap,
   typeNodeToSchemaValue,
 } from "./typeMap";
 import { treeToString } from "./print";
@@ -44,7 +44,7 @@ export function generateTypesString(
   schemaText: string
 ): string {
   const schemaNodes = parse(schemaText);
-  const typeMap = computeSchemaTypeMap(schemaNodes);
+  const typeMap = computeObjectTypeMap(schemaNodes);
   const schema = buildSchema(schemaText);
   const nodes = documents.map((doc) => documentToDefinitionNodes(doc, schema));
 
@@ -105,7 +105,7 @@ function documentToDefinitionNodes(
 
 function definitionNodeToTrees(
   nodes: readonly DefinitionNode[],
-  typeMap: SchemaTypeMap,
+  objectTypeMap: ObjectTypeInfoMap,
   fragments: FragmentDefinitionNode[],
   // TODO: Passing this in feels sus, maybe change in error update
   document: Document
@@ -116,10 +116,10 @@ function definitionNodeToTrees(
     try {
       switch (node.kind) {
         case "OperationDefinition":
-          return operationToTree(node, typeMap, fragments);
+          return operationToTree(node, objectTypeMap, fragments);
         case "FragmentDefinition":
           // These are written out by global.ts
-          return fragmentToTree(node, typeMap, fragments);
+          return fragmentToTree(node, objectTypeMap, fragments);
         default:
           throw Error(`Unimplemented node kind ${node.kind}`);
       }
@@ -135,7 +135,7 @@ function definitionNodeToTrees(
 
 function operationToTree(
   definition: OperationDefinitionNode,
-  typeMap: SchemaTypeMap,
+  objectTypeMap: ObjectTypeInfoMap,
   fragments: FragmentDefinitionNode[]
 ): OperationPrintTree {
   if (!definition.name)
@@ -150,7 +150,7 @@ function operationToTree(
       definition.selectionSet.selections.map((node) =>
         nodeToLeafs(
           node,
-          typeMap,
+          objectTypeMap,
           fragments,
           {
             root: suffix,
@@ -160,7 +160,7 @@ function operationToTree(
         )
       )
     ),
-    type: { list: false, nullable: false, value: suffix },
+    typeSummary: { list: false, nullable: false, value: suffix },
     typesThatImplementThis: null,
   };
 
@@ -187,7 +187,7 @@ function operationToTree(
 
 function fragmentToTree(
   definition: FragmentDefinitionNode,
-  typeMap: SchemaTypeMap,
+  objectTypeMap: ObjectTypeInfoMap,
   fragments: FragmentDefinitionNode[]
 ): OperationPrintTree {
   if (!definition.name) throw Error(`Found a fragment without a name`);
@@ -198,9 +198,9 @@ function fragmentToTree(
   const returnTypeTree: PrintTreeLeaf = fieldToLeaf({
     typeKey: rootTypeName,
     fieldName: name,
-    currentType: { list: false, nullable: false, value: rootTypeName },
+    typeSummary: { list: false, nullable: false, value: rootTypeName },
     selectionSet: definition.selectionSet,
-    typeMap,
+    objectTypeMap,
     fragments,
     history: { root: rootTypeName, steps: [] },
     condition: null,
@@ -217,7 +217,7 @@ function fragmentToTree(
 
 function nodeToLeafs(
   node: SelectionNode,
-  typeMap: SchemaTypeMap,
+  objectTypeMap: ObjectTypeInfoMap,
   fragments: FragmentDefinitionNode[],
   history: History,
   condition: string | null
@@ -230,14 +230,14 @@ function nodeToLeafs(
       const newHistory = condition
         ? { root: condition, steps: [typeKey] }
         : { ...history, steps: [...history.steps, typeKey] };
-      const currentType = findCurrentTypeInMap(typeMap, newHistory);
+      const typeSummary = findTypeSummaryFromMap(objectTypeMap, newHistory);
       return [
         fieldToLeaf({
           typeKey,
           fieldName,
-          currentType,
+          typeSummary,
           selectionSet: node.selectionSet,
-          typeMap,
+          objectTypeMap,
           fragments,
           history: newHistory,
           condition,
@@ -251,7 +251,7 @@ function nodeToLeafs(
         throw Error(`Could not find fragment definition ${fragmentName}`);
       return flatMap(
         fragment.selectionSet.selections.map((s) =>
-          nodeToLeafs(s, typeMap, fragments, history, condition)
+          nodeToLeafs(s, objectTypeMap, fragments, history, condition)
         )
       );
     case "InlineFragment":
@@ -262,7 +262,7 @@ function nodeToLeafs(
       const newCondition = node.typeCondition.name.value;
       return flatMap(
         node.selectionSet.selections.map((s) =>
-          nodeToLeafs(s, typeMap, fragments, history, newCondition)
+          nodeToLeafs(s, objectTypeMap, fragments, history, newCondition)
         )
       );
   }
@@ -276,9 +276,9 @@ const TYPENAME: SelectionNode = {
 interface FieldToLeafParams {
   typeKey: string;
   fieldName: string;
-  currentType: SchemaType;
+  typeSummary: SchemaTypeSummary;
   selectionSet: SelectionSetNode | undefined;
-  typeMap: SchemaTypeMap;
+  objectTypeMap: ObjectTypeInfoMap;
   fragments: FragmentDefinitionNode[];
   history: History;
   condition: string | null;
@@ -287,31 +287,31 @@ interface FieldToLeafParams {
 function fieldToLeaf({
   typeKey,
   fieldName,
-  currentType,
+  typeSummary,
   selectionSet,
-  typeMap,
+  objectTypeMap,
   fragments,
   history,
   condition,
 }: FieldToLeafParams): PrintTreeLeaf {
   if (selectionSet) {
     // Node is an object
-    const typeInfo = typeMap.get(currentType.value);
-    if (!typeInfo) throw Error(`Missing typeInfo for ${typeKey}`);
+    const childType = objectTypeMap.get(typeSummary.value);
+    if (!childType) throw Error(`Missing type information for ${typeKey}`);
     return {
       fieldName: fieldName,
-      type: currentType,
+      typeSummary,
       typesThatImplementThis:
-        typeInfo.typesThatImplementThis.size > 0
-          ? Array.from(typeInfo.typesThatImplementThis)
+        childType.typesThatImplementThis.size > 0
+          ? Array.from(childType.typesThatImplementThis)
           : null,
       condition,
       leafs: flatMap([
-        ...Array.from(typeInfo.typesThatImplementThis).map((cond) =>
-          nodeToLeafs(TYPENAME, typeMap, fragments, history, cond)
+        ...Array.from(childType.typesThatImplementThis).map((cond) =>
+          nodeToLeafs(TYPENAME, objectTypeMap, fragments, history, cond)
         ),
         ...selectionSet.selections.map((n) =>
-          nodeToLeafs(n, typeMap, fragments, history, null)
+          nodeToLeafs(n, objectTypeMap, fragments, history, null)
         ),
       ]),
     };
@@ -319,7 +319,7 @@ function fieldToLeaf({
     // Node is a scalar
     return {
       fieldName,
-      type: currentType,
+      typeSummary,
       typesThatImplementThis: null,
       condition,
       leafs: [],
@@ -333,7 +333,7 @@ function variableToLeafs(node: VariableDefinitionNode): PrintTreeLeaf {
     condition: null,
     fieldName,
     leafs: [],
-    type: typeNodeToSchemaValue(node.type),
+    typeSummary: typeNodeToSchemaValue(node.type),
     typesThatImplementThis: null,
   };
 }

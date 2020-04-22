@@ -8,7 +8,7 @@ import {
 } from "graphql";
 import { EOL } from "os";
 import { schemaTypeToString } from "./util";
-import { SchemaType } from "./types";
+import { SchemaTypeSummary } from "./types";
 
 function isInputObjectType(
   node: DefinitionNode
@@ -55,7 +55,7 @@ function inputTypeToString(node: InputObjectTypeDefinitionNode): string {
   }`;
 }
 
-function typeToSchemaType(node: TypeNode): SchemaType {
+function typeToSchemaType(node: TypeNode): SchemaTypeSummary {
   switch (node.kind) {
     case "NonNullType":
       const nnType = node;
@@ -79,7 +79,7 @@ function typeToSchemaType(node: TypeNode): SchemaType {
 function listTypeToSchemaType(
   node: ListTypeNode,
   nullable: boolean
-): SchemaType {
+): SchemaTypeSummary {
   const listType = node.type;
   switch (listType.kind) {
     case "NamedType":

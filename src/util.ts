@@ -1,4 +1,4 @@
-import { SchemaType } from "./types";
+import { SchemaTypeSummary } from "./types";
 
 function graphqlTypeToTS(v: string): string {
   switch (v) {
@@ -17,7 +17,7 @@ function graphqlTypeToTS(v: string): string {
   }
 }
 
-export function schemaTypeToString(v: SchemaType): string {
+export function schemaTypeToString(v: SchemaTypeSummary): string {
   let res = graphqlTypeToTS(v.value);
 
   if (v.nullable) res += " | null";
