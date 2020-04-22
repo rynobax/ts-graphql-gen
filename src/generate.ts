@@ -15,6 +15,7 @@ import {
   NoUnusedVariablesRule,
   KnownDirectivesRule,
   KnownFragmentNamesRule,
+  SelectionSetNode,
 } from "graphql";
 import { capitalize, flatMap } from "lodash";
 
@@ -24,6 +25,7 @@ import {
   OperationPrintTree,
   PrintTreeLeaf,
   History,
+  SchemaType,
 } from "./types";
 import {
   computeSchemaTypeMap,
@@ -195,20 +197,42 @@ function fragmentToTree(
 
   const rootTypeName = definition.typeCondition.name.value;
 
-  const returnTypeTree = flatMap(
-    definition.selectionSet.selections.map((node) =>
-      nodeToLeafs(
-        node,
-        typeMap,
-        fragments,
-        {
-          root: rootTypeName,
-          steps: [],
-        },
-        null
-      )
-    )
-  );
+  console.log(definition);
+
+  const currentType = findCurrentTypeInMap(typeMap, {
+    root: rootTypeName,
+    steps: [],
+  });
+  const returnTypeTree: PrintTreeLeaf = fieldToLeaf({
+    typeKey: rootTypeName,
+    fieldName: name,
+    currentType,
+    selectionSet: definition.selectionSet,
+    typeMap,
+    fragments,
+    history: { root: rootTypeName, steps: [] },
+    condition: null,
+  });
+  // const returnTypeTree: PrintTreeLeaf = {
+  //   condition: null,
+  //   key: rootTypeName,
+  //   leafs: flatMap(
+  //     definition.selectionSet.selections.map((node) =>
+  //       nodeToLeafs(
+  //         node,
+  //         typeMap,
+  //         fragments,
+  //         {
+  //           root: rootTypeName,
+  //           steps: [],
+  //         },
+  //         null
+  //       )
+  //     )
+  //   ),
+  //   type: { list: false, nullable: false, value: rootTypeName },
+  //   typeInfo: null,
+  // };
 
   // TODO: Dunno if fragments can have variables
   const variablesTypeTree = definition.variableDefinitions
@@ -243,7 +267,25 @@ function nodeToLeafs(
 ): PrintTreeLeaf[] {
   switch (node.kind) {
     case "Field":
-      return [fieldToLeaf(node, typeMap, fragments, history, condition)];
+      const typeKey = node.name.value;
+      const fieldName = node.alias ? node.alias.value : typeKey;
+
+      const newHistory = condition
+        ? { root: condition, steps: [typeKey] }
+        : { ...history, steps: [...history.steps, typeKey] };
+      const currentType = findCurrentTypeInMap(typeMap, newHistory);
+      return [
+        fieldToLeaf({
+          typeKey,
+          fieldName,
+          currentType,
+          selectionSet: node.selectionSet,
+          typeMap,
+          fragments,
+          history: newHistory,
+          condition,
+        }),
+      ];
     case "FragmentSpread":
       // With a fragment, we lookup the fragment, then render it's selections
       const fragmentName = node.name.value;
@@ -274,43 +316,49 @@ const TYPENAME: SelectionNode = {
   name: { kind: "Name", value: "__typename" },
 };
 
-function fieldToLeaf(
-  node: FieldNode,
-  typeMap: SchemaTypeMap,
-  fragments: FragmentDefinitionNode[],
-  history: History,
-  condition: string | null
-): PrintTreeLeaf {
-  const field = node.name.value;
-  const key = node.alias ? node.alias.value : field;
+interface FieldToLeafParams {
+  typeKey: string;
+  fieldName: string;
+  currentType: SchemaType;
+  selectionSet: SelectionSetNode | undefined;
+  typeMap: SchemaTypeMap;
+  fragments: FragmentDefinitionNode[];
+  history: History;
+  condition: string | null;
+}
 
-  const newHistory = condition
-    ? { root: condition, steps: [field] }
-    : { ...history, steps: [...history.steps, field] };
-  const currentType = findCurrentTypeInMap(typeMap, newHistory);
-  if (node.selectionSet) {
+function fieldToLeaf({
+  typeKey,
+  fieldName,
+  currentType,
+  selectionSet,
+  typeMap,
+  fragments,
+  history,
+  condition,
+}: FieldToLeafParams): PrintTreeLeaf {
+  if (selectionSet) {
     const typeInfo = typeMap.returnTypes.get(currentType.value);
-    if (!typeInfo) throw Error(`Missing typeInfo for ${field}`);
-    // Node is an object type, and will have children leafs
+    if (!typeInfo) throw Error(`Missing typeInfo for ${typeKey}`);
     return {
-      key,
+      key: fieldName,
       type: currentType,
       typeInfo,
       condition,
       leafs: flatMap([
         // Insert typename at top
         ...Array.from(typeInfo.typesThatImplementThis).map((cond) =>
-          nodeToLeafs(TYPENAME, typeMap, fragments, newHistory, cond)
+          nodeToLeafs(TYPENAME, typeMap, fragments, history, cond)
         ),
-        ...node.selectionSet.selections.map((n) =>
-          nodeToLeafs(n, typeMap, fragments, newHistory, null)
+        ...selectionSet.selections.map((n) =>
+          nodeToLeafs(n, typeMap, fragments, history, null)
         ),
       ]),
     };
   } else {
     // Node is a scalar
     return {
-      key,
+      key: fieldName,
       type: currentType,
       typeInfo: null,
       condition,
