@@ -23,19 +23,16 @@ class CLI extends Command {
     } = this.parse(CLI);
 
     if (!files) {
-      // TODO: Complain about lack of files
       this.log("You need to provide files");
       this.exit(1);
     }
 
     if (!schemaPath) {
-      // TODO: Complain about lack of out
       this.log("You need to provide schema");
       this.exit(1);
     }
 
     if (!out) {
-      // TODO: Complain about lack of out
       this.log("You need to provide out");
       this.exit(1);
     }
@@ -59,7 +56,6 @@ class CLI extends Command {
   }
 }
 
-// TODO: This stuff can probably be more elegant
 interface FileMaybeDocument {
   documents: string | null;
   content: string;
