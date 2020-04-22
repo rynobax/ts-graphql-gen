@@ -1,6 +1,5 @@
 # Before Beta
 
-refactor pass
 handle scalars
 should a nullable variable be optional?
 allow custom printing hooks for custom hooks and stuff
