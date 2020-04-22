@@ -29,3 +29,7 @@ export function schemaTypeToString(v: SchemaTypeSummary): string {
 
   return res;
 }
+
+export function nonNull<T>(e: T | null): e is T {
+  return e !== null;
+}

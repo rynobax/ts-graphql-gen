@@ -34,10 +34,7 @@ import {
 import { treeToString } from "./print";
 import { reportErrors, ErrorWithMessage } from "./errors";
 import { globalTypesToString } from "./global";
-
-function nonNull<T>(e: T | null): e is T {
-  return e !== null;
-}
+import { nonNull } from "./util";
 
 export function generateTypesString(
   documents: Document[],
