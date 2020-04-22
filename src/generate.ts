@@ -10,6 +10,8 @@ import {
   buildSchema,
   FragmentDefinitionNode,
   VariableDefinitionNode,
+  specifiedRules,
+  NoUnusedFragmentsRule,
 } from "graphql";
 import { capitalize, flatMap } from "lodash";
 
@@ -56,18 +58,25 @@ function isFragmentDefinition(
   return node.kind === "FragmentDefinition";
 }
 
+const IGNORE_THESE_RULES = [NoUnusedFragmentsRule];
+
 function docToTrees(
   document: Document,
   typeMap: SchemaTypeMap,
   schema: GraphQLSchema
 ): Array<OperationPrintTree | null> {
-  const { content } = document;
+  const { content, file } = document;
   const documentNode = parse(content);
   // TODO: This throws if there is no Query type.  Should probably catch and rethrow
-  const validationErrors = validate(schema, documentNode);
+  const relevantRules = specifiedRules.filter(
+    (e) => !IGNORE_THESE_RULES.includes(e)
+  );
+  const validationErrors = validate(schema, documentNode, relevantRules);
   if (validationErrors.length > 0)
     reportErrors(
-      validationErrors.map((e) => Error(`Invalid query: ${e.message}`)),
+      validationErrors.map((e) =>
+        Error(`GraphQL validation error in file ${file}: ${e.message}`)
+      ),
       document
     );
   const errors: ErrorWithMessage[] = [];

@@ -52,6 +52,7 @@ class CLI extends Command {
     const schemaText = await readSchema(schemaPath);
     const output = generateTypesString(documents, schemaText);
 
+    console.log("*** Output ***");
     console.log(format(output, { parser: "typescript" }));
 
     // TODO: Write output to file

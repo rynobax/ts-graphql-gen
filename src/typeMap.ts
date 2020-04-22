@@ -71,13 +71,17 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         addObjectToMap(typeMap, def);
         return;
       case "SchemaDefinition":
-        return;
       case "InputObjectTypeDefinition":
-        return;
       case "EnumTypeDefinition":
+      case "DirectiveDefinition":
+        return;
+      case "ScalarTypeDefinition":
+        // TODO: These need to be dealt with
         return;
       default:
-        throw Error(`Unknown kind parsing schema: ${def.kind}`);
+        throw Error(
+          `Unknown kind parsing schema: ${def.kind}.  Please add an issue to GitHub!`
+        );
     }
   });
   // console.log(typeMap);
