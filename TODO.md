@@ -1,7 +1,6 @@
-boundarySoilStats not in types edit field
-should a nullable variable be optional?
 refactor pass
 handle scalars
+should a nullable variable be optional?
 custom errors that get printed nicely
 better error message for empty graphql document
 test on real apps

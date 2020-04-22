@@ -161,7 +161,7 @@ function mergeLeafs(leafs: PrintTreeLeaf[]): PrintTreeLeaf[] {
 }
 
 const getLeafKey = (l: PrintTreeLeaf) =>
-  l.condition ? `${l.key} | ${l.condition}` : `${l.key}`;
+  l.condition ? `${l.key} | ${l.condition}` : `${l.key} |`;
 
 function listIfNecessary(v: SchemaType, content: string) {
   if (!v.list) return content;
