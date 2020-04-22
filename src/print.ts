@@ -46,13 +46,17 @@ function printVariables({
 
 function variableTypeLeafsToString(leafs: PrintTreeLeaf[]) {
   // Sort leafs alphabetically
-  const sorted = mergeLeafs(leafs).sort((a, b) => a.key.localeCompare(b.key));
+  const sorted = mergeLeafs(leafs).sort((a, b) =>
+    a.fieldName.localeCompare(b.fieldName)
+  );
   return sorted.map(variableTypeLeafToString).join(EOL);
 }
 
 function returnTypeLeafsToString(leafs: PrintTreeLeaf[]) {
   // Sort leafs alphabetically
-  const sorted = mergeLeafs(leafs).sort((a, b) => a.key.localeCompare(b.key));
+  const sorted = mergeLeafs(leafs).sort((a, b) =>
+    a.fieldName.localeCompare(b.fieldName)
+  );
   return sorted.map(returnTypeLeafToString).join(EOL);
 }
 
@@ -69,10 +73,10 @@ function variableTypeLeafToString(leaf: PrintTreeLeaf): string {
       __typename: ${typename};
       ${returnTypeLeafsToString(leaf.leafs)}
     }`;
-    return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
+    return `${leaf.fieldName}: ${listIfNecessary(leaf.type, innerText)}`;
   } else {
     // scalar field
-    return `${leaf.key}: ${schemaTypeToString(leaf.type)};`;
+    return `${leaf.fieldName}: ${schemaTypeToString(leaf.type)};`;
   }
 }
 
@@ -103,7 +107,7 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
           }`;
         })
         .join(` |${EOL}`);
-      return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)};`;
+      return `${leaf.fieldName}: ${listIfNecessary(leaf.type, innerText)};`;
     } else {
       // Single possible type
       const typename =
@@ -116,11 +120,11 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
         __typename: ${typename};
         ${returnTypeLeafsToString(leafs)}
       }`;
-      return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)};`;
+      return `${leaf.fieldName}: ${listIfNecessary(leaf.type, innerText)};`;
     }
   } else {
     // scalar field
-    return `${leaf.key}: ${schemaTypeToString(leaf.type)};`;
+    return `${leaf.fieldName}: ${schemaTypeToString(leaf.type)};`;
   }
 }
 
@@ -155,13 +159,13 @@ function mergeLeafs(leafs: PrintTreeLeaf[]): PrintTreeLeaf[] {
   let merged = arr.map((e) => e[1]);
 
   // We render __typename differently from other types, so remove it
-  merged = merged.filter((l) => l.key !== "__typename");
+  merged = merged.filter((l) => l.fieldName !== "__typename");
 
   return merged;
 }
 
 const getLeafKey = (l: PrintTreeLeaf) =>
-  l.condition ? `${l.key} | ${l.condition}` : `${l.key} |`;
+  l.condition ? `${l.fieldName} | ${l.condition}` : `${l.fieldName} |`;
 
 function listIfNecessary(v: SchemaType, content: string) {
   if (!v.list) return content;

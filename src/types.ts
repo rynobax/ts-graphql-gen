@@ -39,9 +39,8 @@ export interface PrintTreeLeaf {
   type: SchemaType;
   // Information about the type of the node
   typeInfo: ReturnTypeInfo | null;
-  // TODO: Better name would probably make things clearer
   // The result field name (could be renamed from field)
-  key: string;
+  fieldName: string;
   // The possible versions that could exist
   // There is more than one if there are unions or interfaces involved
   leafs: PrintTreeLeaf[];

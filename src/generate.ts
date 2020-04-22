@@ -145,7 +145,7 @@ function operationToTree(
 
   const returnTypeTree: PrintTreeLeaf = {
     condition: null,
-    key: suffix,
+    fieldName: suffix,
     leafs: flatMap(
       definition.selectionSet.selections.map((node) =>
         nodeToLeafs(
@@ -314,7 +314,7 @@ function fieldToLeaf({
     const typeInfo = typeMap.get(currentType.value);
     if (!typeInfo) throw Error(`Missing typeInfo for ${typeKey}`);
     return {
-      key: fieldName,
+      fieldName: fieldName,
       type: currentType,
       typeInfo,
       condition,
@@ -330,7 +330,7 @@ function fieldToLeaf({
   } else {
     // Node is a scalar
     return {
-      key: fieldName,
+      fieldName,
       type: currentType,
       typeInfo: null,
       condition,
@@ -340,10 +340,10 @@ function fieldToLeaf({
 }
 
 function variableToLeafs(node: VariableDefinitionNode): PrintTreeLeaf {
-  const key = node.variable.name.value;
+  const fieldName = node.variable.name.value;
   return {
     condition: null,
-    key,
+    fieldName,
     leafs: [],
     type: typeNodeToSchemaValue(node.type),
     // TODO: Might need to set this
