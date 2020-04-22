@@ -22,11 +22,15 @@ export interface ReturnTypeInfo {
 }
 
 export interface OperationPrintTree {
+  // What this type should be named when printed
   outputTypeName: string;
-  // The __typename of the operation (Query, Mutation, Subscription, fragment type name)
+  // The __typename of the operation (Query, Mutation, fragment type name)
   rootTypeName: string;
+  // The type of the query/mutation result
   returnTypeTree: PrintTreeLeaf;
+  // The type of the variables for this query/mutation
   variablesTypeTree: PrintTreeLeaf[];
+  // They type of the input types for the variables for this query/mutation
   inputTypeTree: PrintTreeLeaf[];
 }
 
@@ -45,6 +49,8 @@ export interface PrintTreeLeaf {
 }
 
 export interface History {
+  // The type that this type is based on (Query, Mutation, fragment type)
   root: string;
+  // The steps into the objects that have been taken (eg. user -> name -> first)
   steps: string[];
 }
