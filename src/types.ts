@@ -44,7 +44,7 @@ export interface PrintTreeLeaf {
   // The possible versions that could exist
   // There is more than one if there are unions or interfaces involved
   leafs: PrintTreeLeaf[];
-  // If this field is dependent on a interface
+  // If this field is dependent on a specific interface or union type being returned
   condition: string | null;
 }
 
