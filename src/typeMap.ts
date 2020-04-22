@@ -59,9 +59,7 @@ export function typeNodeToSchemaValue(type: TypeNode): SchemaType {
 }
 
 export function computeSchemaTypeMap(document: DocumentNode) {
-  const typeMap: SchemaTypeMap = {
-    returnTypes: new Map(),
-  };
+  const typeMap: SchemaTypeMap = new Map();
 
   document.definitions.forEach((def) => {
     switch (def.kind) {
@@ -99,14 +97,14 @@ function addObjectToMap(
 ) {
   const name = def.name.value;
 
-  if (!typeMap.returnTypes.has(name)) initializeReturnType(typeMap, name);
+  if (!typeMap.has(name)) initializeReturnType(typeMap, name);
 
   // Can use nonNull assertion because we just initialized it above
   const {
     fields,
     typesThatImplementThis,
     typesThatThisImplements,
-  } = typeMap.returnTypes.get(name)!;
+  } = typeMap.get(name)!;
 
   // Objects and Interfaces
   if ("fields" in def && def.fields && def.fields.length > 0) {
@@ -132,9 +130,9 @@ function addObjectToMap(
       typesThatThisImplements.add(typeThatThisImplements);
 
       // Add this to the interface it implements
-      if (!typeMap.returnTypes.has(typeThatThisImplements))
+      if (!typeMap.has(typeThatThisImplements))
         initializeReturnType(typeMap, typeThatThisImplements);
-      typeMap.returnTypes
+      typeMap
         // Can nonNull assert because it gets initialized above
         .get(typeThatThisImplements)!
         .typesThatImplementThis.add(name);
@@ -150,9 +148,9 @@ function addObjectToMap(
       typesThatImplementThis.add(typeThatThisIsImplementedBy);
 
       // Add this to the interface it implements
-      if (!typeMap.returnTypes.has(typeThatThisIsImplementedBy))
+      if (!typeMap.has(typeThatThisIsImplementedBy))
         initializeReturnType(typeMap, typeThatThisIsImplementedBy);
-      typeMap.returnTypes
+      typeMap
         // Can nonNull assert because it gets initialized above
         .get(typeThatThisIsImplementedBy)!
         .typesThatThisImplements.add(name);
@@ -161,7 +159,7 @@ function addObjectToMap(
 }
 
 function initializeReturnType(typeMap: SchemaTypeMap, typeName: string) {
-  typeMap.returnTypes.set(typeName, {
+  typeMap.set(typeName, {
     fields: new Map(),
     typesThatImplementThis: new Set(),
     typesThatThisImplements: new Set(),
@@ -176,7 +174,7 @@ export function findCurrentTypeInMap(
   if (history.steps[history.steps.length - 1] === "__typename")
     return { value: "THIS_SHOULD_NOT_BE_USED", list: false, nullable: false };
 
-  let last = typeMap.returnTypes.get(history.root);
+  let last = typeMap.get(history.root);
   let lastValue: SchemaType | null = null;
   history.steps.forEach((k) => {
     if (k === "__typename") {
@@ -207,7 +205,7 @@ export function findCurrentTypeInMap(
       const field = last.fields.get(k);
       if (!field) throw Error(`Missing field ${k} in type ${lastValue?.value}`);
       lastValue = field;
-      last = typeMap.returnTypes.get(lastValue.value);
+      last = typeMap.get(lastValue.value);
     }
   });
   if (!lastValue) throw Error("Missing lastValue");

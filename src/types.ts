@@ -11,10 +11,7 @@ export type SchemaType = {
   list: { nullable: boolean } | false;
 };
 
-export interface SchemaTypeMap {
-  // TODO: This key may end up not having other neighbors, if so can probably remove and flatten
-  returnTypes: Map<string, ReturnTypeInfo>;
-}
+export type SchemaTypeMap = Map<string, ReturnTypeInfo>;
 
 export interface ReturnTypeInfo {
   // Types that implement this type

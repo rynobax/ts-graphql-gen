@@ -311,7 +311,7 @@ function fieldToLeaf({
   condition,
 }: FieldToLeafParams): PrintTreeLeaf {
   if (selectionSet) {
-    const typeInfo = typeMap.returnTypes.get(currentType.value);
+    const typeInfo = typeMap.get(currentType.value);
     if (!typeInfo) throw Error(`Missing typeInfo for ${typeKey}`);
     return {
       key: fieldName,
