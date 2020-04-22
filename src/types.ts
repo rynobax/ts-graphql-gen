@@ -5,7 +5,9 @@ export interface Document {
 
 export type SchemaType = {
   value: string;
+  // Whether or not the type in the list (eg User) can be null
   nullable: boolean;
+  // Whether or not null can be returned instead of a list
   list: { nullable: boolean } | false;
 };
 

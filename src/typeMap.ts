@@ -87,7 +87,6 @@ export function computeSchemaTypeMap(document: DocumentNode) {
         );
     }
   });
-  // console.log(typeMap);
   return typeMap;
 }
 

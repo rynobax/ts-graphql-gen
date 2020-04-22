@@ -65,7 +65,7 @@ function variableTypeLeafToString(leaf: PrintTreeLeaf): string {
             .map((e) => `"${e}"`)
             .join(" | ")
         : `"${leaf.type.value}"`;
-    const innerText = `{
+    let innerText = `{
       __typename: ${typename};
       ${returnTypeLeafsToString(leaf.leafs)}
     }`;
@@ -103,7 +103,7 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
           }`;
         })
         .join(` |${EOL}`);
-      return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
+      return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)};`;
     } else {
       // Single possible type
       const typename =
@@ -116,7 +116,7 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
         __typename: ${typename};
         ${returnTypeLeafsToString(leafs)}
       }`;
-      return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)}`;
+      return `${leaf.key}: ${listIfNecessary(leaf.type, innerText)};`;
     }
   } else {
     // scalar field
@@ -165,9 +165,7 @@ const getLeafKey = (l: PrintTreeLeaf) =>
 
 function listIfNecessary(v: SchemaType, content: string) {
   if (!v.list) return content;
-  if (v.list.nullable) {
-    return `Array<${content} | null>`;
-  } else {
-    return `Array<${content}>`;
-  }
+  return `Array<${content}${orNull(v.nullable)}>${orNull(v.list.nullable)}`;
 }
+
+const orNull = (nullable: boolean) => (nullable ? " | null" : "");

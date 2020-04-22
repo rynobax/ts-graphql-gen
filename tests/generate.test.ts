@@ -116,7 +116,7 @@ test("list combinations", () => {
         __typename: 'Query';
         testing: {
           __typename: 'Testing';
-          listFour: Array<number| null> | null;
+          listFour: Array<number | null> | null;
           listOne: Array<number>;
           listThree: Array<number | null>;
           listTwo: Array<number> | null;
@@ -1198,7 +1198,7 @@ test("enum mutation", () => {
     }
 
     type Mutation {
-      createUser(type: AccountType!): User
+      createUser(type: AccountType!): User!
     }
     
     type User {
@@ -1235,6 +1235,66 @@ test("enum mutation", () => {
     export type CreateUserMutationVariables = {
       type: AccountType;
     };
+    `
+  );
+});
+
+test("list nullability and objects", () => {
+  runTest(
+    `
+  schema {
+    query: Query
+  }
+
+  type Query {
+    bothNull: [User]
+    userNull: [User]!
+    listNull: [User!]
+    noNull: [User!]!
+  }
+
+  type User {
+    id: String!
+  }
+  `,
+    [
+      `
+    query Users {
+      bothNull {
+        id
+      }
+      userNull {
+        id
+      }
+      listNull {
+        id
+      }
+      noNull {
+        id
+      }
+    }
+    `,
+    ],
+    `                                 
+    export type UsersQuery = {
+      __typename: 'Query';
+      bothNull: Array<{
+        __typename: 'User';
+        id: string;
+      } | null> | null;
+      listNull: Array<{
+        __typename: 'User';
+        id: string;
+      }> | null;
+      noNull: Array<{
+        __typename: 'User';
+        id: string;
+      }>;
+      userNull: Array<{
+        __typename: 'User';
+        id: string;
+      } | null>;
+    }
     `
   );
 });

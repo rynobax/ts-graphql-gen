@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "local": "node .\\build\\cli.js -f localtesting/*.ts -s localtesting/schema.graphql -o test.ts"
+    "local": "node .\\build\\cli.js -f ../trellis/Dashboard/src/**/!(graphql.tsx) -s ../trellis/Dashboard/schema.graphql -o test.ts"
   },
   "files": [
     "build"
