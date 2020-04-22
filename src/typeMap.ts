@@ -169,7 +169,6 @@ function initializeObjectType(
   });
 }
 
-// TODO: Rename this
 export function findTypeSummaryFromMap(
   objectTypeMap: ObjectTypeInfoMap,
   history: History

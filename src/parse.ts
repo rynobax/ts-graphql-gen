@@ -63,7 +63,6 @@ export function findGraphqlDocuments({
 }
 
 export async function readSchema(path: string) {
-  // TODO: Also handle JSON schema?
   const rawfile = await readFile(path);
   return String(rawfile);
 }

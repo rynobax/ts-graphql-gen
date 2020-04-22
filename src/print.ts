@@ -84,8 +84,6 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
     ).sort((a, b) => a.localeCompare(b));
     if (conditions.length > 0) {
       // Multiple possible types
-      // TODO: Can the two types be null and Something?
-      // TODO: Is this going to work right with arrays?
       const innerText = conditions
         .map((c) => {
           const relevantLeafs = leafs.filter(

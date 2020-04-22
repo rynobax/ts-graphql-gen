@@ -21,7 +21,6 @@ function isEnumType(node: DefinitionNode): node is EnumTypeDefinitionNode {
 }
 
 export function globalTypesToString(schema: DocumentNode): string {
-  // TODO: Might be nice to print other stuff as well (fragments, types)
   const inputTypes = schema.definitions.filter(isInputObjectType);
   const enumTypes = schema.definitions.filter(isEnumType);
   return [
