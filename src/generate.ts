@@ -12,6 +12,9 @@ import {
   VariableDefinitionNode,
   specifiedRules,
   NoUnusedFragmentsRule,
+  NoUnusedVariablesRule,
+  KnownDirectivesRule,
+  KnownFragmentNamesRule,
 } from "graphql";
 import { capitalize, flatMap } from "lodash";
 
@@ -43,9 +46,20 @@ export function generateTypesString(
   const typeMap = computeSchemaTypeMap(schemaNodes);
   const schema = buildSchema(schemaText);
   const globalTypes = globalTypesToString(schemaNodes);
-  const result = documents
-    .map((doc) => {
-      const trees = docToTrees(doc, typeMap, schema);
+  const nodes = documents.map((doc) => documentToDefinitionNodes(doc, schema));
+
+  const allFragments = flatMap(
+    nodes.map((defs) => defs.filter(isFragmentDefinition))
+  );
+
+  const result = nodes
+    .map((defs, i) => {
+      const trees = definitionNodeToTrees(
+        defs,
+        typeMap,
+        allFragments,
+        documents[i]
+      );
       return trees.filter(nonNull).map(treeToString).join(EOL);
     })
     .join(EOL);
@@ -58,13 +72,17 @@ function isFragmentDefinition(
   return node.kind === "FragmentDefinition";
 }
 
-const IGNORE_THESE_RULES = [NoUnusedFragmentsRule];
+const IGNORE_THESE_RULES = [
+  NoUnusedFragmentsRule,
+  NoUnusedVariablesRule,
+  KnownDirectivesRule,
+  KnownFragmentNamesRule,
+];
 
-function docToTrees(
+function documentToDefinitionNodes(
   document: Document,
-  typeMap: SchemaTypeMap,
   schema: GraphQLSchema
-): Array<OperationPrintTree | null> {
+): readonly DefinitionNode[] {
   const { content, file } = document;
   const documentNode = parse(content);
   // TODO: This throws if there is no Query type.  Should probably catch and rethrow
@@ -79,11 +97,20 @@ function docToTrees(
       ),
       document
     );
+
+  return documentNode.definitions;
+}
+
+function definitionNodeToTrees(
+  nodes: readonly DefinitionNode[],
+  typeMap: SchemaTypeMap,
+  fragments: FragmentDefinitionNode[],
+  // TODO: Passing this in feels sus, maybe change in error update
+  document: Document
+): Array<OperationPrintTree | null> {
   const errors: ErrorWithMessage[] = [];
 
-  const fragments = documentNode.definitions.filter(isFragmentDefinition);
-
-  const result = documentNode.definitions.map((node) => {
+  const result = nodes.map((node) => {
     try {
       switch (node.kind) {
         case "OperationDefinition":

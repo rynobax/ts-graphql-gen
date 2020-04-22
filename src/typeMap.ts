@@ -70,10 +70,13 @@ export function computeSchemaTypeMap(document: DocumentNode) {
       case "UnionTypeDefinition":
         addObjectToMap(typeMap, def);
         return;
-      case "SchemaDefinition":
       case "InputObjectTypeDefinition":
       case "EnumTypeDefinition":
+        // These are printed in global
+        return;
+      case "SchemaDefinition":
       case "DirectiveDefinition":
+        // These are ignored
         return;
       case "ScalarTypeDefinition":
         // TODO: These need to be dealt with
