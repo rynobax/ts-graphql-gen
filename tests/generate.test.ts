@@ -1047,7 +1047,7 @@ test("complex mutation", () => {
   );
 });
 
-test("enum", () => {
+test("enum query", () => {
   runTest(
     `
     schema {
@@ -1088,6 +1088,59 @@ test("enum", () => {
         id: string;
       }
     }
+    `
+  );
+});
+
+test("enum mutation", () => {
+  runTest(
+    `
+    schema {
+      query: Query
+    }
+
+    type Query {
+      user: User!
+    }
+
+    type Mutation {
+      createUser(type: AccountType!): User
+    }
+    
+    type User {
+      id: String!
+      accountType: AccountType!
+    }
+    
+    enum AccountType {
+      ADMIN
+      NORMAL
+    }
+    `,
+    [
+      `
+      mutation CreateUser($type: AccountType!) {
+        createUser(type: $type) {
+          accountType
+          id
+        }
+      }`,
+    ],
+    `
+    type AccountType = "ADMIN" | "NORMAL";
+
+    type CreateUserMutation = {
+      __typename: "Mutation";
+      createUser: {
+        __typename: "User";
+        accountType: AccountType;
+        id: string;
+      };
+    };
+
+    type CreateUserMutationVariables = {
+      type: AccountType;
+    };
     `
   );
 });
