@@ -4,7 +4,6 @@ import {
   DefinitionNode,
   OperationDefinitionNode,
   SelectionNode,
-  FieldNode,
   validate,
   GraphQLSchema,
   buildSchema,
@@ -207,26 +206,6 @@ function fragmentToTree(
     history: { root: rootTypeName, steps: [] },
     condition: null,
   });
-  // const returnTypeTree: PrintTreeLeaf = {
-  //   condition: null,
-  //   key: rootTypeName,
-  //   leafs: flatMap(
-  //     definition.selectionSet.selections.map((node) =>
-  //       nodeToLeafs(
-  //         node,
-  //         typeMap,
-  //         fragments,
-  //         {
-  //           root: rootTypeName,
-  //           steps: [],
-  //         },
-  //         null
-  //       )
-  //     )
-  //   ),
-  //   type: { list: false, nullable: false, value: rootTypeName },
-  //   typeInfo: null,
-  // };
 
   // TODO: Dunno if fragments can have variables
   const variablesTypeTree = definition.variableDefinitions
@@ -340,7 +319,6 @@ function fieldToLeaf({
       typeInfo,
       condition,
       leafs: flatMap([
-        // Insert typename at top
         ...Array.from(typeInfo.typesThatImplementThis).map((cond) =>
           nodeToLeafs(TYPENAME, typeMap, fragments, history, cond)
         ),
