@@ -1,8 +1,7 @@
 import glob from "glob";
 import { readFile as readFileNode } from "fs";
 import { promisify } from "util";
-import * as babel from "@babel/parser";
-import traverse from "@babel/traverse";
+import { gqlPluckFromCodeStringSync } from "@graphql-toolkit/graphql-tag-pluck";
 
 const readFile = promisify(readFileNode);
 
@@ -22,30 +21,28 @@ export async function readFiles(pattern: string) {
   return fileStrings.map((s, i) => ({ content: s, name: filePaths[i] }));
 }
 
-export function findGraphqlDocuments(content: string): string[] {
-  const ast = babel.parse(content, { sourceType: "module" });
-  const docs: string[] = [];
-  traverse(ast, {
-    TemplateElement: (e) => {
-      const { start, end } = e.node;
-      if (start === null) throw Error("Node has no start");
-      if (end === null) throw Error("Node has no end");
-      const immediateParent = e.parentPath;
-      if (immediateParent.type === "TemplateLiteral") {
-        const grandParent = immediateParent.parent;
-        if (grandParent.type === "TaggedTemplateExpression") {
-          const { tag } = grandParent;
-          if (tag.type === "Identifier") {
-            if (tag.name === "gql") {
-              const text = content.slice(start, end);
-              docs.push(text.trim());
-            }
-          }
-        }
-      }
-    },
-  });
-  return docs;
+export function findGraphqlDocuments({
+  content,
+  name,
+}: {
+  content: string;
+  name: string;
+}): string | null {
+  try {
+    const gqlStuff = gqlPluckFromCodeStringSync(name, content);
+    if (!gqlStuff) return null;
+    else return gqlStuff;
+  } catch (err) {
+    if (err.loc) {
+      const { line, column } = err.loc;
+      const lines = content.split("\n");
+      const errorLine = lines[line];
+      console.error(
+        `Babel ran into an issue parsing the file "${name}" on line ${line}, column ${column}.  The line is:\n${errorLine}`
+      );
+    }
+    throw err;
+  }
 }
 
 export async function readSchema(path: string) {

@@ -1,5 +1,4 @@
 import { Command, flags } from "@oclif/command";
-import { flatMap } from "lodash";
 import { format } from "prettier";
 
 import { readFiles, findGraphqlDocuments, readSchema } from "./parse";
@@ -42,16 +41,14 @@ class CLI extends Command {
     }
 
     const filesToCheck = await readFiles(files);
-    const documents: Document[] = flatMap(
-      filesToCheck
-        .map((e) => ({
-          ...e,
-          documents: findGraphqlDocuments(e.content),
-        }))
-        // Only care about files with a graphql document
-        .filter((e) => e.documents.length > 0),
-      (e) => e.documents.map((doc) => ({ file: e.name, content: doc }))
-    );
+    const documents: Document[] = filesToCheck
+      .map((e) => ({
+        ...e,
+        documents: findGraphqlDocuments(e),
+      }))
+      // Only care about files with a graphql document
+      .filter(isFileWithDocument)
+      .map((e) => ({ file: e.name, content: e.documents }));
     const schemaText = await readSchema(schemaPath);
     const output = generateTypesString(documents, schemaText);
 
@@ -59,6 +56,23 @@ class CLI extends Command {
 
     // TODO: Write output to file
   }
+}
+
+// TODO: This stuff can probably be more elegant
+interface FileMaybeDocument {
+  documents: string | null;
+  content: string;
+  name: string;
+}
+
+interface FileWithDocument {
+  documents: string;
+  content: string;
+  name: string;
+}
+
+function isFileWithDocument(file: FileMaybeDocument): file is FileWithDocument {
+  return file.documents !== null;
 }
 
 (CLI.run() as Promise<unknown>).catch(require("@oclif/errors/handle"));
