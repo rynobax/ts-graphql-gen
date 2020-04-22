@@ -4,38 +4,26 @@ import { format } from "prettier";
 import { readFiles, findGraphqlDocuments, readSchema } from "./parse";
 import { generateTypesString } from "./generate";
 import { Document } from "./types";
+import { getConfig } from "./config";
 
 class CLI extends Command {
   static description = "Generate typescript types from graphql files";
 
   static flags = {
     version: flags.version({ char: "v" }),
-    files: flags.string({ char: "f" }),
-    out: flags.string({ char: "o" }),
-    schema: flags.string({ char: "s" }),
+    configPath: flags.string({ char: "c" }),
   };
 
   static args = [{ name: "file" }];
 
   async run() {
     const {
-      flags: { files, out, schema: schemaPath },
+      flags: { configPath = "./ts-graphql-gen.config.js" },
     } = this.parse(CLI);
 
-    if (!files) {
-      this.log("You need to provide files");
-      this.exit(1);
-    }
-
-    if (!schemaPath) {
-      this.log("You need to provide schema");
-      this.exit(1);
-    }
-
-    if (!out) {
-      this.log("You need to provide out");
-      this.exit(1);
-    }
+    const {
+      options: { files, schema: schemaPath },
+    } = await getConfig(configPath);
 
     const filesToCheck = await readFiles(files);
     const documents: Document[] = filesToCheck

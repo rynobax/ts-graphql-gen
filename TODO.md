@@ -1,8 +1,7 @@
 # Before Beta
 
-handle scalars
-should a nullable variable be optional?
 allow custom printing hooks for custom hooks and stuff
+handle scalars
 test on real apps
 
 # Before Release
