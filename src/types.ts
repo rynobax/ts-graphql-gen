@@ -22,12 +22,8 @@ export interface ReturnTypeInfo {
 }
 
 export interface OperationPrintTree {
-  // TODO: Should probably just merge name and suffix into one thing
-  // Name of the operation
-  name: string;
-  // Type of the operation (query, mutation, subscription, fragment)
-  suffix: string;
-  // The __typename of the operation
+  outputTypeName: string;
+  // The __typename of the operation (Query, Mutation, Subscription, fragment type name)
   rootTypeName: string;
   returnTypeTree: PrintTreeLeaf;
   variablesTypeTree: PrintTreeLeaf[];

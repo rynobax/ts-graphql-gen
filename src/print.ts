@@ -14,29 +14,25 @@ export function treeToString(tree: OperationPrintTree): string {
 }
 
 function printOperation({
-  name,
-  suffix,
+  outputTypeName,
   returnTypeTree,
 }: OperationPrintTree): string {
-  const typeName = name + suffix;
-
   // The result is going to include a "key" (eg. Query: {}) that we
   // can just throw away
   const res = returnTypeLeafsToString([returnTypeTree]);
   const inner = res.slice(res.indexOf(":") + 2);
 
   return `
-  export type ${typeName} = ${inner}
+  export type ${outputTypeName} = ${inner}
   `;
 }
 
 function printVariables({
-  name,
-  suffix,
+  outputTypeName,
   variablesTypeTree: variables,
 }: OperationPrintTree): string {
   if (variables.length === 0) return "";
-  const typeName = name + suffix + "Variables";
+  const typeName = outputTypeName + "Variables";
   return `
   export type ${typeName} = {
     ${variableTypeLeafsToString(variables)}

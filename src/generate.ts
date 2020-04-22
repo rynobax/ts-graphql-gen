@@ -177,8 +177,7 @@ function operationToTree(
     : [];
 
   return {
-    name,
-    suffix: suffix,
+    outputTypeName: name + suffix,
     rootTypeName: suffix,
     returnTypeTree,
     variablesTypeTree,
@@ -222,8 +221,7 @@ function fragmentToTree(
     : [];
 
   return {
-    name,
-    suffix: "Fragment",
+    outputTypeName: name + "Fragment",
     rootTypeName: rootTypeName,
     returnTypeTree,
     variablesTypeTree,
