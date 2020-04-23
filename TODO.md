@@ -1,6 +1,5 @@
 # Before Beta
 
-allow custom printing hooks for custom hooks and stuff
 handle scalars
 test on real apps
 
