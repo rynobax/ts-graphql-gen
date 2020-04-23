@@ -29,6 +29,8 @@ export function globalTypesToString(
   const enumTypes = schema.definitions.filter(isEnumType);
   return [
     config && config.hooks && config.hooks.header ? config.hooks.header() : "",
+    // TODO: How can user change this?
+    "import gql from 'graphql-tag'",
     ...inputTypes.map(inputTypeToString),
     ...enumTypes.map(enumTypeToString),
   ].join(EOL);

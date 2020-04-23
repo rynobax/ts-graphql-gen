@@ -34,6 +34,9 @@ export interface OperationPrintTree {
   variablesTypeTree: PrintTreeLeaf[];
   // They type of the input types for the variables for this query/mutation
   inputTypeTree: PrintTreeLeaf[];
+  // TODO: Fragments need to be copied
+  // The graphql document this was generated from
+  document: Document;
 }
 
 export interface PrintTreeLeaf {

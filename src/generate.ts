@@ -109,7 +109,6 @@ function definitionNodeToTrees(
   nodes: readonly DefinitionNode[],
   objectTypeMap: ObjectTypeInfoMap,
   fragments: FragmentDefinitionNode[],
-  // TODO: Passing this in feels sus, maybe change in error update
   document: Document
 ): Array<OperationPrintTree | null> {
   const errors: ErrorWithMessage[] = [];
@@ -118,10 +117,10 @@ function definitionNodeToTrees(
     try {
       switch (node.kind) {
         case "OperationDefinition":
-          return operationToTree(node, objectTypeMap, fragments);
+          return operationToTree(node, objectTypeMap, fragments, document);
         case "FragmentDefinition":
           // These are written out by global.ts
-          return fragmentToTree(node, objectTypeMap, fragments);
+          return fragmentToTree(node, objectTypeMap, fragments, document);
         default:
           throw Error(`Unimplemented node kind ${node.kind}`);
       }
@@ -138,7 +137,8 @@ function definitionNodeToTrees(
 function operationToTree(
   definition: OperationDefinitionNode,
   objectTypeMap: ObjectTypeInfoMap,
-  fragments: FragmentDefinitionNode[]
+  fragments: FragmentDefinitionNode[],
+  document: Document
 ): OperationPrintTree {
   if (!definition.name)
     throw Error(`Found a ${definition.operation} without a name`);
@@ -185,13 +185,15 @@ function operationToTree(
     returnTypeTree,
     variablesTypeTree,
     inputTypeTree,
+    document,
   };
 }
 
 function fragmentToTree(
   definition: FragmentDefinitionNode,
   objectTypeMap: ObjectTypeInfoMap,
-  fragments: FragmentDefinitionNode[]
+  fragments: FragmentDefinitionNode[],
+  document: Document
 ): OperationPrintTree {
   if (!definition.name) throw Error(`Found a fragment without a name`);
   const name = definition.name.value;
@@ -216,6 +218,7 @@ function fragmentToTree(
     returnTypeTree,
     variablesTypeTree: [],
     inputTypeTree: [],
+    document,
   };
 }
 

@@ -14,11 +14,19 @@ export function treeToString(tree: OperationPrintTree, config: Config): string {
     printOperation(tree),
     printVariables(tree),
     callHooksToString(tree, config),
+    printDocument(tree),
   ].join("");
 }
 
+function printDocument(tree: OperationPrintTree) {
+  return `
+  // Imported from ${tree.document.file}
+  export const ${tree.operationName}Document = gql\`
+  ${tree.document.content}
+  \``;
+}
+
 function callHooksToString(tree: OperationPrintTree, config: Config): string {
-  // TODO: Call user's hooks
   const { hooks } = config;
 
   if (!hooks) return "";
