@@ -101,7 +101,6 @@ function documentToDefinitionNodes(
       ),
       document
     );
-
   return documentNode.definitions;
 }
 
@@ -114,13 +113,30 @@ function definitionNodeToTrees(
   const errors: ErrorWithMessage[] = [];
 
   const result = nodes.map((node) => {
+    if (!node.loc) throw Error(`No location for document ${document.file}`);
+    // The document might contain multiple operations.  This reduces the document to just
+    // the relevant part
+    const relevantDocument: Document = {
+      file: document.file,
+      content: document.content.slice(node.loc.start, node.loc.end),
+    };
     try {
       switch (node.kind) {
         case "OperationDefinition":
-          return operationToTree(node, objectTypeMap, fragments, document);
+          return operationToTree(
+            node,
+            objectTypeMap,
+            fragments,
+            relevantDocument
+          );
         case "FragmentDefinition":
           // These are written out by global.ts
-          return fragmentToTree(node, objectTypeMap, fragments, document);
+          return fragmentToTree(
+            node,
+            objectTypeMap,
+            fragments,
+            relevantDocument
+          );
         default:
           throw Error(`Unimplemented node kind ${node.kind}`);
       }
@@ -145,21 +161,24 @@ function operationToTree(
   const name = definition.name.value;
   const suffix = capitalize(definition.operation);
 
+  const fragmentsUsed: Set<FragmentDefinitionNode> = new Set();
+
   const returnTypeTree: PrintTreeLeaf = {
     condition: null,
     fieldName: suffix,
     leafs: flatMap(
       definition.selectionSet.selections.map((node) =>
-        nodeToLeafs(
+        nodeToLeafs({
           node,
           objectTypeMap,
           fragments,
-          {
+          history: {
             root: suffix,
             steps: [],
           },
-          null
-        )
+          condition: null,
+          fragmentsUsed,
+        })
       )
     ),
     typeSummary: { list: false, nullable: false, value: suffix },
@@ -186,6 +205,7 @@ function operationToTree(
     variablesTypeTree,
     inputTypeTree,
     document,
+    fragmentNames: Array.from(fragmentsUsed.values()).map((f) => f.name.value),
   };
 }
 
@@ -200,6 +220,8 @@ function fragmentToTree(
 
   const rootTypeName = definition.typeCondition.name.value;
 
+  const fragmentsUsed: Set<FragmentDefinitionNode> = new Set();
+
   const returnTypeTree: PrintTreeLeaf = fieldToLeaf({
     typeKey: rootTypeName,
     fieldName: name,
@@ -209,6 +231,7 @@ function fragmentToTree(
     fragments,
     history: { root: rootTypeName, steps: [] },
     condition: null,
+    fragmentsUsed,
   });
 
   return {
@@ -219,16 +242,27 @@ function fragmentToTree(
     variablesTypeTree: [],
     inputTypeTree: [],
     document,
+    fragmentNames: Array.from(fragmentsUsed.values()).map((f) => f.name.value),
   };
 }
 
-function nodeToLeafs(
-  node: SelectionNode,
-  objectTypeMap: ObjectTypeInfoMap,
-  fragments: FragmentDefinitionNode[],
-  history: History,
-  condition: string | null
-): PrintTreeLeaf[] {
+interface NodeToLeafParams {
+  node: SelectionNode;
+  objectTypeMap: ObjectTypeInfoMap;
+  fragments: FragmentDefinitionNode[];
+  history: History;
+  condition: string | null;
+  fragmentsUsed: Set<FragmentDefinitionNode>;
+}
+
+function nodeToLeafs({
+  node,
+  objectTypeMap,
+  fragments,
+  history,
+  condition,
+  fragmentsUsed,
+}: NodeToLeafParams): PrintTreeLeaf[] {
   switch (node.kind) {
     case "Field":
       const typeKey = node.name.value;
@@ -248,6 +282,7 @@ function nodeToLeafs(
           fragments,
           history: newHistory,
           condition,
+          fragmentsUsed,
         }),
       ];
     case "FragmentSpread":
@@ -256,9 +291,17 @@ function nodeToLeafs(
       const fragment = fragments.find((f) => f.name.value === fragmentName);
       if (!fragment)
         throw Error(`Could not find fragment definition ${fragmentName}`);
+      fragmentsUsed.add(fragment);
       return flatMap(
         fragment.selectionSet.selections.map((s) =>
-          nodeToLeafs(s, objectTypeMap, fragments, history, condition)
+          nodeToLeafs({
+            node: s,
+            objectTypeMap,
+            fragments,
+            history,
+            condition,
+            fragmentsUsed,
+          })
         )
       );
     case "InlineFragment":
@@ -269,7 +312,14 @@ function nodeToLeafs(
       const newCondition = node.typeCondition.name.value;
       return flatMap(
         node.selectionSet.selections.map((s) =>
-          nodeToLeafs(s, objectTypeMap, fragments, history, newCondition)
+          nodeToLeafs({
+            node: s,
+            objectTypeMap,
+            fragments,
+            history,
+            condition: newCondition,
+            fragmentsUsed,
+          })
         )
       );
   }
@@ -289,6 +339,7 @@ interface FieldToLeafParams {
   fragments: FragmentDefinitionNode[];
   history: History;
   condition: string | null;
+  fragmentsUsed: Set<FragmentDefinitionNode>;
 }
 
 function fieldToLeaf({
@@ -300,6 +351,7 @@ function fieldToLeaf({
   fragments,
   history,
   condition,
+  fragmentsUsed,
 }: FieldToLeafParams): PrintTreeLeaf {
   if (selectionSet) {
     // Node is an object
@@ -315,10 +367,24 @@ function fieldToLeaf({
       condition,
       leafs: flatMap([
         ...Array.from(childType.typesThatImplementThis).map((cond) =>
-          nodeToLeafs(TYPENAME, objectTypeMap, fragments, history, cond)
+          nodeToLeafs({
+            node: TYPENAME,
+            objectTypeMap,
+            fragments,
+            history,
+            condition: cond,
+            fragmentsUsed,
+          })
         ),
         ...selectionSet.selections.map((n) =>
-          nodeToLeafs(n, objectTypeMap, fragments, history, null)
+          nodeToLeafs({
+            node: n,
+            objectTypeMap,
+            fragments,
+            history,
+            condition: null,
+            fragmentsUsed,
+          })
         ),
       ]),
     };

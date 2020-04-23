@@ -11,19 +11,24 @@ function nonNull<T>(e: T | null): e is T {
 
 export function treeToString(tree: OperationPrintTree, config: Config): string {
   return [
+    printDocument(tree),
     printOperation(tree),
     printVariables(tree),
     callHooksToString(tree, config),
-    printDocument(tree),
   ].join("");
 }
 
 function printDocument(tree: OperationPrintTree) {
+  const fragments = tree.fragmentNames
+    .map((name) => `\${${name}Document}`)
+    .join(EOL);
   return `
-  // Imported from ${tree.document.file}
+  // Source: ${tree.document.file}
   export const ${tree.operationName}Document = gql\`
   ${tree.document.content}
-  \``;
+  ${fragments}
+  \`
+  `;
 }
 
 function callHooksToString(tree: OperationPrintTree, config: Config): string {
@@ -39,7 +44,7 @@ function callHooksToString(tree: OperationPrintTree, config: Config): string {
     tree.variablesTypeTree.length > 0
       ? `${tree.outputTypeName}Variables`
       : null;
-  const documentType = "TODO";
+  const documentType = `${tree.operationName}Document`;
 
   switch (tree.rootTypeName) {
     case "Query":
