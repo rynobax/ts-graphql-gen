@@ -1,27 +1,49 @@
-import * as D from "io-ts/lib/Decoder";
-import { isRight } from "fp-ts/lib/Either";
-import { draw } from "io-ts/lib/Tree";
-
-const configDecoder = D.type({
-  options: D.type({
-    files: D.string,
-    schema: D.string,
-    out: D.string,
-  }),
-});
-
-type Config = D.TypeOf<typeof configDecoder>;
+interface Config {
+  options: {
+    files: string;
+    schema: string;
+    out: string;
+  };
+  hooks: {
+    Query?: Function;
+    Mutation?: Function;
+  };
+}
 
 export async function getConfig(path: string): Promise<Config> {
   try {
-    // TODO: May need to adjust path
     const maybeConfig = await import(path);
-    const res = configDecoder.decode(maybeConfig);
-    if (isRight(res)) {
-      return res.right as Config;
-    } else {
-      console.error("Issue decoding config file:");
-      console.error(draw(res.left));
+
+    try {
+      if (typeof maybeConfig !== "object")
+        throw Error("Config is not an object");
+      const { options, hooks } = maybeConfig;
+
+      if (typeof options !== "object")
+        throw Error("Key 'options' is not an object");
+
+      const { files, schema, out } = options;
+
+      if (typeof files !== "string")
+        throw Error("Key 'options.files' is not a string");
+      if (typeof schema !== "string")
+        throw Error("Key 'options.schema' is not a string");
+      if (typeof out !== "string")
+        throw Error("Key 'options.out' is not a string");
+
+      if (hooks) {
+        if (typeof hooks !== "object")
+          throw Error("Key 'hooks' is not an object");
+        const { Query, Mutation } = hooks;
+        if (Query && typeof Query !== "function")
+          throw Error("Key 'hooks.Query' is not a function");
+        if (Mutation && typeof Mutation !== "function")
+          throw Error("Key 'hooks.Mutation' is not a function");
+      }
+
+      return maybeConfig as Config;
+    } catch (err) {
+      console.error(`Issue decoding config file: ${err.message}`);
       process.exit(1);
     }
   } catch (err) {

@@ -21,10 +21,8 @@
     "@oclif/config": "^1.14.0",
     "@oclif/errors": "^1.2.2",
     "@oclif/plugin-help": "^2.2.3",
-    "fp-ts": "^2.5.3",
     "glob": "^7.1.6",
     "graphql": "^14.6.0",
-    "io-ts": "^2.2.1",
     "lodash": "^4.17.15"
   },
   "devDependencies": {
