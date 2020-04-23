@@ -3,13 +3,53 @@ import { uniq } from "lodash";
 
 import { SchemaTypeSummary, OperationPrintTree, PrintTreeLeaf } from "./types";
 import { schemaTypeToString } from "./util";
+import { Config } from "./config";
 
 function nonNull<T>(e: T | null): e is T {
   return e !== null;
 }
 
-export function treeToString(tree: OperationPrintTree): string {
-  return `${printOperation(tree)}${printVariables(tree)}`;
+export function treeToString(tree: OperationPrintTree, config: Config): string {
+  return [
+    printOperation(tree),
+    printVariables(tree),
+    callHooksToString(tree, config),
+  ].join("");
+}
+
+function callHooksToString(tree: OperationPrintTree, config: Config): string {
+  // TODO: Call user's hooks
+  const { hooks } = config;
+
+  if (!hooks) return "";
+
+  const { Mutation, Query } = hooks;
+
+  const operationName = tree.operationName;
+  const returnType = tree.outputTypeName;
+  const variableType =
+    tree.variablesTypeTree.length > 0
+      ? `${tree.outputTypeName}Variables`
+      : null;
+  const documentType = "TODO";
+
+  switch (tree.rootTypeName) {
+    case "Query":
+      if (Query)
+        return Query({ operationName, returnType, variableType, documentType });
+      else return "";
+    case "Mutation":
+      if (Mutation)
+        return Mutation({
+          operationName,
+          returnType,
+          variableType,
+          documentType,
+        });
+      else return "";
+    default:
+      return "";
+  }
 }
 
 function printOperation({
@@ -28,13 +68,13 @@ function printOperation({
 
 function printVariables({
   outputTypeName,
-  variablesTypeTree: variables,
+  variablesTypeTree,
 }: OperationPrintTree): string {
-  if (variables.length === 0) return "";
+  if (variablesTypeTree.length === 0) return "";
   const typeName = outputTypeName + "Variables";
   return `
   export type ${typeName} = {
-    ${variableTypeLeafsToString(variables)}
+    ${variableTypeLeafsToString(variablesTypeTree)}
   }
   `;
 }

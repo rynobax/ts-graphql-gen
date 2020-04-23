@@ -9,6 +9,7 @@ import {
 import { EOL } from "os";
 import { schemaTypeToString } from "./util";
 import { SchemaTypeSummary } from "./types";
+import { Config } from "./config";
 
 function isInputObjectType(
   node: DefinitionNode
@@ -20,10 +21,14 @@ function isEnumType(node: DefinitionNode): node is EnumTypeDefinitionNode {
   return node.kind === "EnumTypeDefinition";
 }
 
-export function globalTypesToString(schema: DocumentNode): string {
+export function globalTypesToString(
+  schema: DocumentNode,
+  config: Config
+): string {
   const inputTypes = schema.definitions.filter(isInputObjectType);
   const enumTypes = schema.definitions.filter(isEnumType);
   return [
+    config && config.hooks && config.hooks.header ? config.hooks.header() : "",
     ...inputTypes.map(inputTypeToString),
     ...enumTypes.map(enumTypeToString),
   ].join(EOL);

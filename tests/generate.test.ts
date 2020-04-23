@@ -44,9 +44,13 @@ const doc = (content: string): Document => ({
 const fmt = (str: string) => prettierFormat(str, { parser: "typescript" });
 
 const runTest = (schema: string, queries: string[], expected: string) => {
-  expect(fmt(generateTypesString(queries.map(doc), schema))).toEqual(
-    fmt(expected)
-  );
+  expect(
+    fmt(
+      generateTypesString(queries.map(doc), schema, {
+        options: { files: "", out: "", schema: "" },
+      })
+    )
+  ).toEqual(fmt(expected));
 };
 
 test("basic", () => {

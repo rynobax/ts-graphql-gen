@@ -35,10 +35,12 @@ import { treeToString } from "./print";
 import { reportErrors, ErrorWithMessage } from "./errors";
 import { globalTypesToString } from "./global";
 import { nonNull } from "./util";
+import { Config } from "./config";
 
 export function generateTypesString(
   documents: Document[],
-  schemaText: string
+  schemaText: string,
+  config: Config
 ): string {
   const schemaNodes = parse(schemaText);
   const typeMap = computeObjectTypeMap(schemaNodes);
@@ -57,11 +59,14 @@ export function generateTypesString(
         allFragments,
         documents[i]
       );
-      return trees.filter(nonNull).map(treeToString).join(EOL);
+      return trees
+        .filter(nonNull)
+        .map((tree) => treeToString(tree, config))
+        .join(EOL);
     })
     .join(EOL);
 
-  const globalTypes = globalTypesToString(schemaNodes);
+  const globalTypes = globalTypesToString(schemaNodes, config);
   return [globalTypes, result].join(EOL);
 }
 
@@ -174,6 +179,7 @@ function operationToTree(
     : [];
 
   return {
+    operationName: name,
     outputTypeName: name + suffix,
     rootTypeName: suffix,
     returnTypeTree,
@@ -204,6 +210,7 @@ function fragmentToTree(
   });
 
   return {
+    operationName: name,
     outputTypeName: name + "Fragment",
     rootTypeName: rootTypeName,
     returnTypeTree,

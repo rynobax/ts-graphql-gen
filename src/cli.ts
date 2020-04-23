@@ -21,9 +21,10 @@ class CLI extends Command {
       flags: { configPath = "./ts-graphql-gen.config.js" },
     } = this.parse(CLI);
 
+    const config = await getConfig(configPath);
     const {
       options: { files, schema: schemaPath },
-    } = await getConfig(configPath);
+    } = config;
 
     const filesToCheck = await readFiles(files);
     const documents: Document[] = filesToCheck
@@ -35,7 +36,7 @@ class CLI extends Command {
       .filter(isFileWithDocument)
       .map((e) => ({ file: e.name, content: e.documents }));
     const schemaText = await readSchema(schemaPath);
-    const output = generateTypesString(documents, schemaText);
+    const output = generateTypesString(documents, schemaText, config);
 
     console.log("*** Output ***");
     console.log(format(output, { parser: "typescript" }));

@@ -6,7 +6,13 @@ import { parse } from "graphql";
 const fmt = (str: string) => prettierFormat(str, { parser: "typescript" });
 
 const runTest = (schema: string, expected: string) => {
-  expect(fmt(globalTypesToString(parse(schema)))).toEqual(fmt(expected));
+  expect(
+    fmt(
+      globalTypesToString(parse(schema), {
+        options: { files: "", out: "", schema: "" },
+      })
+    )
+  ).toEqual(fmt(expected));
 };
 
 test("no global types", () => {

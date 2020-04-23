@@ -22,6 +22,8 @@ export interface ObjectTypeInfo {
 }
 
 export interface OperationPrintTree {
+  // Name of the operation
+  operationName: string;
   // What this type should be named when printed
   outputTypeName: string;
   // The __typename of the operation (Query, Mutation, fragment type name)

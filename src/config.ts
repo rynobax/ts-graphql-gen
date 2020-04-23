@@ -1,14 +1,24 @@
-interface Config {
+export interface Config {
   options: {
     files: string;
     schema: string;
     out: string;
   };
-  hooks: {
-    Query?: Function;
-    Mutation?: Function;
+  hooks?: {
+    header?: () => string;
+    Query?: OperationFn;
+    Mutation?: OperationFn;
   };
 }
+
+interface OperationBundle {
+  operationName: string;
+  returnType: string;
+  variableType: string | null;
+  documentType: string;
+}
+
+type OperationFn = (bundle: OperationBundle) => string;
 
 export async function getConfig(path: string): Promise<Config> {
   try {
