@@ -15,6 +15,7 @@ import {
   KnownDirectivesRule,
   KnownFragmentNamesRule,
   SelectionSetNode,
+  GraphQLError,
 } from "graphql";
 import { capitalize, flatMap } from "lodash";
 
@@ -32,7 +33,7 @@ import {
   typeNodeToSchemaValue,
 } from "./typeMap";
 import { treeToString } from "./print";
-import { reportErrors, ErrorWithMessage } from "./errors";
+import { reportParsingErrors, endProcess, highlightLineIssue } from "./errors";
 import { globalTypesToString } from "./global";
 import { nonNull } from "./util";
 import { Config } from "./config";
@@ -42,7 +43,7 @@ export function generateTypesString(
   schemaText: string,
   config: Config
 ): string {
-  const schemaNodes = parse(schemaText);
+  const schemaNodes = parseSchemaOrThrow(schemaText, config.options.schema);
   const typeMap = computeObjectTypeMap(schemaNodes);
   const schema = buildSchema(schemaText);
   const nodes = documents.map((doc) => documentToDefinitionNodes(doc, schema));
@@ -70,6 +71,28 @@ export function generateTypesString(
   return [globalTypes, result].join(EOL);
 }
 
+function parseSchemaOrThrow(schemaText: string, location: string) {
+  try {
+    const schemaNodes = parse(schemaText);
+    return schemaNodes;
+  } catch (err) {
+    if (err instanceof GraphQLError) {
+      let locationInfo = "";
+      if (err.locations) {
+        locationInfo = ` on line ${err.locations[0].line}, column ${err.locations[0].column}`;
+      }
+      console.error(`Error parsing schema "${location}"${locationInfo}`);
+      console.error(`  - ${err.message}`);
+      if (err.locations) {
+        locationInfo = ` on line ${err.locations[0].line}, column ${err.locations[0].column}`;
+        highlightLineIssue(schemaText, err.locations[0].line);
+      }
+      endProcess();
+    }
+    throw err;
+  }
+}
+
 function isFragmentDefinition(
   node: DefinitionNode
 ): node is FragmentDefinitionNode {
@@ -95,11 +118,11 @@ function documentToDefinitionNodes(
   );
   const validationErrors = validate(schema, documentNode, relevantRules);
   if (validationErrors.length > 0)
-    reportErrors(
-      validationErrors.map((e) =>
-        Error(`GraphQL validation error in file ${file}: ${e.message}`)
+    reportParsingErrors(
+      validationErrors.map(
+        (e) => `GraphQL validation error in file ${file}: ${e.message}`
       ),
-      document
+      document.file
     );
   return documentNode.definitions;
 }
@@ -110,7 +133,7 @@ function definitionNodeToTrees(
   fragments: FragmentDefinitionNode[],
   document: Document
 ): Array<OperationPrintTree | null> {
-  const errors: ErrorWithMessage[] = [];
+  const errors: string[] = [];
 
   const result = nodes.map((node) => {
     if (!node.loc) throw Error(`No location for document ${document.file}`);
@@ -141,13 +164,17 @@ function definitionNodeToTrees(
           throw Error(`Unimplemented node kind ${node.kind}`);
       }
     } catch (err) {
-      errors.push(err);
+      errors.push(err.message);
       return null;
     }
   });
 
   if (errors.length === 0) return result;
-  else return reportErrors(errors, document);
+  else {
+    // This will end the process, idk why typescript thinks we need to return
+    reportParsingErrors(errors, document.file);
+    return [];
+  }
 }
 
 function operationToTree(

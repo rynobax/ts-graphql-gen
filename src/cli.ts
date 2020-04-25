@@ -35,6 +35,7 @@ class CLI extends Command {
       // Only care about files with a graphql document
       .filter(isFileWithDocument)
       .map((e) => ({ file: e.name, content: e.documents }));
+
     const schemaText = await readSchema(schemaPath);
     const output = generateTypesString(documents, schemaText, config);
 
