@@ -105,7 +105,10 @@ function documentsToDefinitionNodes(
     nodes.push(
       ...definitions.map((node) => ({
         node,
-        source: doc,
+        source: {
+          file: doc.file,
+          content: doc.content.slice(node.loc?.start, node.loc?.end),
+        },
       }))
     );
     if (validationErrors.length > 0) {
@@ -158,22 +161,13 @@ function definitionNodeToTrees(
   if (!node.loc) throw Error(`No location for document ${document.file}`);
   // The document might contain multiple operations.  This reduces the document to just
   // the relevant part
-  const relevantDocument: Document = {
-    file: document.file,
-    content: document.content.slice(node.loc.start, node.loc.end),
-  };
   try {
     switch (node.kind) {
       case "OperationDefinition":
-        return operationToTree(
-          node,
-          objectTypeMap,
-          fragments,
-          relevantDocument
-        );
+        return operationToTree(node, objectTypeMap, fragments, document);
       case "FragmentDefinition":
         // These are written out by global.ts
-        return fragmentToTree(node, objectTypeMap, fragments, relevantDocument);
+        return fragmentToTree(node, objectTypeMap, fragments, document);
       default:
         throw Error(`Unimplemented node kind ${node.kind}`);
     }
