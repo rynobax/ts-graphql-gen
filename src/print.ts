@@ -11,7 +11,7 @@ function nonNull<T>(e: T | null): e is T {
 
 export function treeToString(tree: OperationPrintTree, config: Config): string {
   return [
-    printDocument(tree),
+    config.options.copyDocuments ? printDocument(tree) : "",
     printOperation(tree),
     printVariables(tree),
     callHooksToString(tree, config),

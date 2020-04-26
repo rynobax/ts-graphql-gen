@@ -2,6 +2,7 @@ import { format as prettierFormat } from "prettier";
 
 import { generateTypesString } from "../src/generate";
 import { Document } from "../src/types";
+import { Config } from "../src/config";
 
 const simpleSchema = `
 schema {
@@ -43,14 +44,23 @@ const doc = (content: string): Document => ({
 
 const fmt = (str: string) => prettierFormat(str, { parser: "typescript" });
 
-const runTest = (schema: string, queries: string[], expected: string) => {
-  expect(
-    fmt(
-      generateTypesString(queries.map(doc), schema, {
-        options: { files: "", out: "", schema: "" },
-      })
-    )
-  ).toEqual(fmt(expected));
+const defaultConfig = () => ({
+  options: { files: "", out: "", schema: "" },
+});
+
+const runTest = (
+  schema: string,
+  queries: string[],
+  expected: string,
+  config?: Config
+) => {
+  const result = generateTypesString(
+    queries.map(doc),
+    schema,
+    config || defaultConfig()
+  );
+
+  expect(fmt(result)).toEqual(fmt(expected));
 };
 
 test("basic", () => {
@@ -1300,5 +1310,75 @@ test("list nullability and objects", () => {
       } | null>;
     }
     `
+  );
+});
+
+test("directive", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
+      query Me($getBio: Boolean!) {
+        me {
+          id
+          bio @include(if: $getBio)
+        }
+      }`,
+    ],
+    `
+    export type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        bio: string | null;
+        id: string;
+      }
+    }
+
+    export type MeQueryVariables = {
+      getBio: boolean;
+    }
+    `
+  );
+});
+
+test("copyDocuemnts", () => {
+  runTest(
+    simpleSchema,
+    [
+      `
+      query Me {
+        me {
+          id
+          bio
+        }
+      }`,
+    ],
+    `
+    import gql from 'graphql-tag';
+
+    // Source: somefile.ts
+    export const MeDocument = gql\`
+    query Me {
+      me {
+        id
+        bio
+      }
+    }
+    \`;
+
+    export type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        bio: string | null;
+        id: string;
+      }
+    }
+    `,
+    {
+      ...defaultConfig(),
+      options: { ...defaultConfig().options, copyDocuments: true },
+    }
   );
 });

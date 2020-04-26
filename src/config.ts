@@ -3,6 +3,7 @@ export interface Config {
     files: string;
     schema: string;
     out: string;
+    copyDocuments?: boolean;
   };
   hooks?: {
     header?: () => string;
@@ -32,7 +33,7 @@ export async function getConfig(path: string): Promise<Config> {
       if (typeof options !== "object")
         throw Error("Key 'options' is not an object");
 
-      const { files, schema, out } = options;
+      const { files, schema, out, copyDocuments } = options;
 
       if (typeof files !== "string")
         throw Error("Key 'options.files' is not a string");
@@ -40,6 +41,8 @@ export async function getConfig(path: string): Promise<Config> {
         throw Error("Key 'options.schema' is not a string");
       if (typeof out !== "string")
         throw Error("Key 'options.out' is not a string");
+      if (copyDocuments !== undefined && typeof copyDocuments !== "boolean")
+        throw Error("Key 'options.copyDocuments' is not a boolean");
 
       if (hooks) {
         if (typeof hooks !== "object")
