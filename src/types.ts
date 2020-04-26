@@ -11,6 +11,8 @@ export type SchemaTypeSummary = {
   list: { nullable: boolean } | false;
 };
 
+export type ScalarTypeInfoMap = Map<string, string>;
+
 export type ObjectTypeInfoMap = Map<string, ObjectTypeInfo>;
 
 export interface ObjectTypeInfo {

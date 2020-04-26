@@ -31,6 +31,7 @@ import {
   computeObjectTypeMap,
   findTypeSummaryFromMap,
   typeNodeToSchemaValue,
+  computeScalarTypeMap,
 } from "./typeMap";
 import { treeToString } from "./print";
 import { reportParsingErrors, endProcess, printGraphQLError } from "./errors";
@@ -44,7 +45,8 @@ export function generateTypesString(
   config: Config
 ): string {
   const schemaNodes = parseSchemaOrThrow(schemaText, config.options.schema);
-  const typeMap = computeObjectTypeMap(schemaNodes);
+  const objectTypeMap = computeObjectTypeMap(schemaNodes);
+  const scalarTypeMap = computeScalarTypeMap(schemaNodes, config);
   const schema = buildSchema(schemaText);
   const nodes = documentsToDefinitionNodes(documents, schema);
 
@@ -56,18 +58,18 @@ export function generateTypesString(
     .map((defs, i) => {
       const trees = definitionNodeToTrees(
         defs,
-        typeMap,
+        objectTypeMap,
         allFragments,
         documents[i]
       );
       return trees
         .filter(nonNull)
-        .map((tree) => treeToString(tree, config))
+        .map((tree) => treeToString(tree, scalarTypeMap, config))
         .join(EOL);
     })
     .join(EOL);
 
-  const globalTypes = globalTypesToString(schemaNodes, config);
+  const globalTypes = globalTypesToString(schemaNodes, scalarTypeMap, config);
   return [globalTypes, result].join(EOL);
 }
 

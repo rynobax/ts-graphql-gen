@@ -1,7 +1,7 @@
 import { Command, flags } from "@oclif/command";
 import { format } from "prettier";
 import { writeFileSync, mkdirSync } from "fs";
-import { join, dirname } from "path";
+import { join } from "path";
 
 import { readFiles, findGraphqlDocuments, readSchema } from "./parse";
 import { generateTypesString } from "./generate";

@@ -7,7 +7,13 @@ import {
   UnionTypeDefinitionNode,
 } from "graphql";
 
-import { SchemaTypeSummary, ObjectTypeInfoMap, History } from "./types";
+import {
+  SchemaTypeSummary,
+  ObjectTypeInfoMap,
+  History,
+  ScalarTypeInfoMap,
+} from "./types";
+import { Config } from "./config";
 
 function getListSchemaValue(
   node: ListTypeNode,
@@ -58,10 +64,33 @@ export function typeNodeToSchemaValue(type: TypeNode): SchemaTypeSummary {
   }
 }
 
-export function computeObjectTypeMap(document: DocumentNode) {
+export function computeScalarTypeMap(
+  schemaDocument: DocumentNode,
+  config: Config
+) {
+  const scalarTypeMap: ScalarTypeInfoMap = new Map();
+
+  schemaDocument.definitions.forEach((def) => {
+    switch (def.kind) {
+      case "ScalarTypeDefinition":
+        const name = def.name.value;
+        const configValue = config.scalars?.[name];
+        // TODO: Could link to readme
+        if (!configValue)
+          throw Error(`Missing scalar definition for '${name}' in config.`);
+        scalarTypeMap.set(name, configValue);
+        return;
+      default:
+        return;
+    }
+  });
+  return scalarTypeMap;
+}
+
+export function computeObjectTypeMap(schemaDocument: DocumentNode) {
   const objectTypeMap: ObjectTypeInfoMap = new Map();
 
-  document.definitions.forEach((def) => {
+  schemaDocument.definitions.forEach((def) => {
     switch (def.kind) {
       case "ObjectTypeDefinition":
       case "InterfaceTypeDefinition":
@@ -77,12 +106,9 @@ export function computeObjectTypeMap(document: DocumentNode) {
         // These are ignored
         return;
       case "ScalarTypeDefinition":
-        // TODO: These need to be dealt with
         return;
       default:
-        throw Error(
-          `Unknown kind parsing schema: ${def.kind}.  Please add an issue to GitHub!`
-        );
+        return;
     }
   });
   return objectTypeMap;

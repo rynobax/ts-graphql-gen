@@ -8,7 +8,7 @@ import {
 } from "graphql";
 import { EOL } from "os";
 import { schemaTypeToString } from "./util";
-import { SchemaTypeSummary } from "./types";
+import { SchemaTypeSummary, ScalarTypeInfoMap } from "./types";
 import { Config } from "./config";
 
 function isInputObjectType(
@@ -23,6 +23,7 @@ function isEnumType(node: DefinitionNode): node is EnumTypeDefinitionNode {
 
 export function globalTypesToString(
   schema: DocumentNode,
+  scalarTypeMap: ScalarTypeInfoMap,
   config: Config
 ): string {
   const inputTypes = schema.definitions.filter(isInputObjectType);
@@ -31,7 +32,7 @@ export function globalTypesToString(
     config.hooks?.header ? config.hooks.header() : "",
     // TODO: How can user change this?
     config.options.copyDocuments ? "import gql from 'graphql-tag'" : "",
-    ...inputTypes.map(inputTypeToString),
+    ...inputTypes.map((t) => inputTypeToString(t, scalarTypeMap)),
     ...enumTypes.map(enumTypeToString),
   ].join(EOL);
 }
@@ -43,13 +44,16 @@ function enumTypeToString(node: EnumTypeDefinitionNode): string {
   return `export type ${name} = ${value};`;
 }
 
-function inputTypeToString(node: InputObjectTypeDefinitionNode): string {
+function inputTypeToString(
+  node: InputObjectTypeDefinitionNode,
+  scalarTypeMap: ScalarTypeInfoMap
+): string {
   // It's a scalar
   if (!node.fields) return "";
   const content = node.fields
     .map((f) => {
       const key = f.name.value;
-      const value = schemaTypeToString(typeToSchemaType(f.type));
+      const value = schemaTypeToString(typeToSchemaType(f.type), scalarTypeMap);
       return `${key}: ${value};`;
     })
     .join(EOL);

@@ -10,6 +10,7 @@ export interface Config {
     Query?: OperationFn;
     Mutation?: OperationFn;
   };
+  scalars?: Record<string, string>;
 }
 
 interface OperationBundle {
@@ -28,7 +29,7 @@ export async function getConfig(path: string): Promise<Config> {
     try {
       if (typeof maybeConfig !== "object")
         throw Error("Config is not an object");
-      const { options, hooks } = maybeConfig;
+      const { options, hooks, scalars } = maybeConfig;
 
       if (typeof options !== "object")
         throw Error("Key 'options' is not an object");
@@ -52,6 +53,15 @@ export async function getConfig(path: string): Promise<Config> {
           throw Error("Key 'hooks.Query' is not a function");
         if (Mutation && typeof Mutation !== "function")
           throw Error("Key 'hooks.Mutation' is not a function");
+      }
+
+      if (scalars) {
+        if (typeof scalars !== "object")
+          throw Error("Key 'scalars' is not an object");
+        Object.entries(scalars).forEach(([k, v]) => {
+          if (typeof v !== "string")
+            throw Error(`Key 'scalars.${k}' is not a string`);
+        });
       }
 
       return maybeConfig as Config;

@@ -1,6 +1,6 @@
-import { SchemaTypeSummary } from "./types";
+import { SchemaTypeSummary, ScalarTypeInfoMap } from "./types";
 
-function graphqlTypeToTS(v: string): string {
+function graphqlTypeToTS(v: string, scalarTypeMap: ScalarTypeInfoMap): string {
   switch (v) {
     case "Boolean":
       return "boolean";
@@ -13,12 +13,22 @@ function graphqlTypeToTS(v: string): string {
     case "String":
       return "string";
     default:
-      return v;
+      const scalarVal = scalarTypeMap.get(v);
+      if (scalarVal) {
+        // Custom scalar
+        return scalarVal;
+      } else {
+        // Object type
+        return v;
+      }
   }
 }
 
-export function schemaTypeToString(v: SchemaTypeSummary): string {
-  let res = graphqlTypeToTS(v.value);
+export function schemaTypeToString(
+  v: SchemaTypeSummary,
+  scalarTypeMap: ScalarTypeInfoMap
+): string {
+  let res = graphqlTypeToTS(v.value, scalarTypeMap);
 
   if (v.nullable) res += " | null";
 

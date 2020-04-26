@@ -1,7 +1,12 @@
 import { EOL } from "os";
 import { uniq } from "lodash";
 
-import { SchemaTypeSummary, OperationPrintTree, PrintTreeLeaf } from "./types";
+import {
+  SchemaTypeSummary,
+  OperationPrintTree,
+  PrintTreeLeaf,
+  ScalarTypeInfoMap,
+} from "./types";
 import { schemaTypeToString } from "./util";
 import { Config } from "./config";
 
@@ -9,11 +14,15 @@ function nonNull<T>(e: T | null): e is T {
   return e !== null;
 }
 
-export function treeToString(tree: OperationPrintTree, config: Config): string {
+export function treeToString(
+  tree: OperationPrintTree,
+  scalarTypeMap: ScalarTypeInfoMap,
+  config: Config
+): string {
   return [
     config.options.copyDocuments ? printDocument(tree) : "",
-    printOperation(tree),
-    printVariables(tree),
+    printOperation(tree, scalarTypeMap),
+    printVariables(tree, scalarTypeMap),
     callHooksToString(tree, config),
   ].join("");
 }
@@ -65,13 +74,13 @@ function callHooksToString(tree: OperationPrintTree, config: Config): string {
   }
 }
 
-function printOperation({
-  outputTypeName,
-  returnTypeTree,
-}: OperationPrintTree): string {
+function printOperation(
+  { outputTypeName, returnTypeTree }: OperationPrintTree,
+  scalarTypeMap: ScalarTypeInfoMap
+): string {
   // The result is going to include a "key" (eg. Query: {}) that we
   // can just throw away
-  const res = returnTypeLeafsToString([returnTypeTree]);
+  const res = returnTypeLeafsToString([returnTypeTree], scalarTypeMap);
   const inner = res.slice(res.indexOf(":") + 2);
 
   return `
@@ -79,34 +88,43 @@ function printOperation({
   `;
 }
 
-function printVariables({
-  outputTypeName,
-  variablesTypeTree,
-}: OperationPrintTree): string {
+function printVariables(
+  { outputTypeName, variablesTypeTree }: OperationPrintTree,
+  scalarTypeMap: ScalarTypeInfoMap
+): string {
   if (variablesTypeTree.length === 0) return "";
   const typeName = outputTypeName + "Variables";
   return `
   export type ${typeName} = {
-    ${variableTypeLeafsToString(variablesTypeTree)}
+    ${variableTypeLeafsToString(variablesTypeTree, scalarTypeMap)}
   }
   `;
 }
 
-function variableTypeLeafsToString(leafs: PrintTreeLeaf[]) {
+function variableTypeLeafsToString(
+  leafs: PrintTreeLeaf[],
+  scalarTypeMap: ScalarTypeInfoMap
+) {
   return mergeLeafs(leafs)
     .sort((a, b) => a.fieldName.localeCompare(b.fieldName))
-    .map(variableTypeLeafToString)
+    .map((l) => variableTypeLeafToString(l, scalarTypeMap))
     .join(EOL);
 }
 
-function returnTypeLeafsToString(leafs: PrintTreeLeaf[]) {
+function returnTypeLeafsToString(
+  leafs: PrintTreeLeaf[],
+  scalarTypeMap: ScalarTypeInfoMap
+) {
   return mergeLeafs(leafs)
     .sort((a, b) => a.fieldName.localeCompare(b.fieldName))
-    .map(returnTypeLeafToString)
+    .map((l) => returnTypeLeafToString(l, scalarTypeMap))
     .join(EOL);
 }
 
-function variableTypeLeafToString(leaf: PrintTreeLeaf): string {
+function variableTypeLeafToString(
+  leaf: PrintTreeLeaf,
+  scalarTypeMap: ScalarTypeInfoMap
+): string {
   if (leaf.leafs.length > 0) {
     // input object field
     const typename = leaf.typesThatImplementThis
@@ -114,16 +132,22 @@ function variableTypeLeafToString(leaf: PrintTreeLeaf): string {
       : `"${leaf.typeSummary.value}"`;
     let innerText = `{
       __typename: ${typename};
-      ${returnTypeLeafsToString(leaf.leafs)}
+      ${returnTypeLeafsToString(leaf.leafs, scalarTypeMap)}
     }`;
     return `${leaf.fieldName}: ${listIfNecessary(leaf.typeSummary, innerText)}`;
   } else {
     // scalar field
-    return `${leaf.fieldName}: ${schemaTypeToString(leaf.typeSummary)};`;
+    return `${leaf.fieldName}: ${schemaTypeToString(
+      leaf.typeSummary,
+      scalarTypeMap
+    )};`;
   }
 }
 
-function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
+function returnTypeLeafToString(
+  leaf: PrintTreeLeaf,
+  scalarTypeMap: ScalarTypeInfoMap
+): string {
   if (leaf.leafs.length > 0) {
     // object field
     // Some leafs may be the same field, but with different subfields selected,
@@ -144,7 +168,7 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
           );
           return `{
             __typename: "${c}";
-            ${returnTypeLeafsToString(relevantLeafs)}
+            ${returnTypeLeafsToString(relevantLeafs, scalarTypeMap)}
           }`;
         })
         .join(` |${EOL}`);
@@ -159,7 +183,7 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
         : `"${leaf.typeSummary.value}"`;
       const innerText = `{
         __typename: ${typename};
-        ${returnTypeLeafsToString(leafs)}
+        ${returnTypeLeafsToString(leafs, scalarTypeMap)}
       }`;
       return `${leaf.fieldName}: ${listIfNecessary(
         leaf.typeSummary,
@@ -168,7 +192,10 @@ function returnTypeLeafToString(leaf: PrintTreeLeaf): string {
     }
   } else {
     // scalar field
-    return `${leaf.fieldName}: ${schemaTypeToString(leaf.typeSummary)};`;
+    return `${leaf.fieldName}: ${schemaTypeToString(
+      leaf.typeSummary,
+      scalarTypeMap
+    )};`;
   }
 }
 
