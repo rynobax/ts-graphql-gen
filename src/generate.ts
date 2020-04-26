@@ -33,7 +33,7 @@ import {
   typeNodeToSchemaValue,
 } from "./typeMap";
 import { treeToString } from "./print";
-import { reportParsingErrors, endProcess, highlightLineIssue } from "./errors";
+import { reportParsingErrors, endProcess, printGraphQLError } from "./errors";
 import { globalTypesToString } from "./global";
 import { nonNull } from "./util";
 import { Config } from "./config";
@@ -46,7 +46,7 @@ export function generateTypesString(
   const schemaNodes = parseSchemaOrThrow(schemaText, config.options.schema);
   const typeMap = computeObjectTypeMap(schemaNodes);
   const schema = buildSchema(schemaText);
-  const nodes = documents.map((doc) => documentToDefinitionNodes(doc, schema));
+  const nodes = documentsToDefinitionNodes(documents, schema);
 
   const allFragments = flatMap(
     nodes.map((defs) => defs.filter(isFragmentDefinition))
@@ -77,16 +77,7 @@ function parseSchemaOrThrow(schemaText: string, location: string) {
     return schemaNodes;
   } catch (err) {
     if (err instanceof GraphQLError) {
-      let locationInfo = "";
-      if (err.locations) {
-        locationInfo = ` on line ${err.locations[0].line}, column ${err.locations[0].column}`;
-      }
-      console.error(`Error parsing schema "${location}"${locationInfo}`);
-      console.error(`  - ${err.message}`);
-      if (err.locations) {
-        locationInfo = ` on line ${err.locations[0].line}, column ${err.locations[0].column}`;
-        highlightLineIssue(schemaText, err.locations[0].line);
-      }
+      printGraphQLError(err, { content: schemaText, file: location }, "schema");
       endProcess();
     }
     throw err;
@@ -99,6 +90,31 @@ function isFragmentDefinition(
   return node.kind === "FragmentDefinition";
 }
 
+// TODO: Can probably simplify some stuff by having this not return nested array
+function documentsToDefinitionNodes(
+  documents: Document[],
+  schema: GraphQLSchema
+): DefinitionNode[][] {
+  const nodes: DefinitionNode[][] = [];
+  let hadErrors = false;
+  for (const doc of documents) {
+    const { definitions, validationErrors } = documentToDefinitionNodes(
+      doc,
+      schema
+    );
+    nodes.push(definitions);
+    if (validationErrors.length > 0) {
+      hadErrors = true;
+      console.error(`GraphQL validation errors in file ${doc.file}:`);
+      validationErrors.forEach((e) => {
+        console.error(`  - ${e.message}`);
+      });
+    }
+  }
+  if (hadErrors) endProcess();
+  return nodes;
+}
+
 const IGNORE_THESE_RULES = [
   NoUnusedFragmentsRule,
   NoUnusedVariablesRule,
@@ -106,29 +122,30 @@ const IGNORE_THESE_RULES = [
   KnownFragmentNamesRule,
 ];
 
-function documentToDefinitionNodes(
-  document: Document,
-  schema: GraphQLSchema
-): readonly DefinitionNode[] {
-  const { content, file } = document;
-  const documentNode = parse(content);
-  // TODO: This throws if there is no Query type.  Should probably catch and rethrow
-  const relevantRules = specifiedRules.filter(
-    (e) => !IGNORE_THESE_RULES.includes(e)
-  );
-  const validationErrors = validate(schema, documentNode, relevantRules);
-  if (validationErrors.length > 0)
-    reportParsingErrors(
-      validationErrors.map(
-        (e) => `GraphQL validation error in file ${file}: ${e.message}`
-      ),
-      document.file
+function documentToDefinitionNodes(doc: Document, schema: GraphQLSchema) {
+  const { content } = doc;
+  try {
+    const documentNode = parse(content);
+    // TODO: This throws if there is no Query type.  Should probably catch and rethrow
+    const relevantRules = specifiedRules.filter(
+      (e) => !IGNORE_THESE_RULES.includes(e)
     );
-  return documentNode.definitions;
+    const validationErrors = validate(schema, documentNode, relevantRules);
+    return { definitions: [...documentNode.definitions], validationErrors };
+  } catch (err) {
+    if (err instanceof GraphQLError) {
+      console.log(err);
+      printGraphQLError(err, doc, "GraphQL document");
+      endProcess();
+    }
+    console.error(`Error parsing document "${doc.file}"`);
+    console.error(err);
+    endProcess();
+  }
 }
 
 function definitionNodeToTrees(
-  nodes: readonly DefinitionNode[],
+  nodes: DefinitionNode[],
   objectTypeMap: ObjectTypeInfoMap,
   fragments: FragmentDefinitionNode[],
   document: Document
@@ -173,7 +190,6 @@ function definitionNodeToTrees(
   else {
     // This will end the process, idk why typescript thinks we need to return
     reportParsingErrors(errors, document.file);
-    return [];
   }
 }
 

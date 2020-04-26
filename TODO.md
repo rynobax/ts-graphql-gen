@@ -1,8 +1,8 @@
 # Before Beta
 
-custom errors that get printed nicely
 better error message for empty graphql document
 handle json schema
+write out to file
 
 # Before Release
 
