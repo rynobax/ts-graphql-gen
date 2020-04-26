@@ -51,7 +51,7 @@ export function generateTypesString(
 
   const allFragments = nodes.map((e) => e.node).filter(isFragmentDefinition);
 
-  const result = nodes
+  const result = sortNodes(nodes)
     .map(({ node, source }) => {
       const tree = definitionNodeToTrees(
         node,
@@ -65,6 +65,46 @@ export function generateTypesString(
 
   const globalTypes = globalTypesToString(schemaNodes, scalarTypeMap, config);
   return [globalTypes, result].join(EOL);
+}
+
+// Put documents before they are used
+// TODO: This could probably rewritten to be less confusing and/or faster
+function sortNodes(nodes: ParsedDocument[]) {
+  let fragments = nodes.filter((e) => isFragmentDefinition(e.node));
+  // Non fragments can never be included in another document, so they can go last
+  const nonFragments = nodes.filter((e) => !isFragmentDefinition(e.node));
+
+  let swappedLastTime = false;
+  for (let i = 0; i < fragments.length; i++) {
+    if (swappedLastTime) {
+      swappedLastTime = false;
+      i = 0;
+    }
+
+    let toSwap: number | null = null;
+    const name = (fragments[i].node as FragmentDefinitionNode).name.value;
+    for (let j = 0; j < i; j++) {
+      const { content } = fragments[j].source;
+      if (content.includes(`...${name}`)) {
+        toSwap = i;
+        break;
+      }
+    }
+
+    if (toSwap !== null) {
+      swappedLastTime = true;
+      fragments = moveToFront(fragments, toSwap);
+    }
+    toSwap = null;
+  }
+
+  return [...fragments, ...nonFragments];
+}
+
+function moveToFront<T>(arr: T[], ndx: number) {
+  const front = arr.filter((_, i) => i === ndx);
+  const back = arr.filter((_, i) => i !== ndx);
+  return [...front, ...back];
 }
 
 function parseSchemaOrThrow(schemaText: string, location: string) {

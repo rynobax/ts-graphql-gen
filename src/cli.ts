@@ -46,8 +46,8 @@ class CLI extends Command {
 
     try {
       const formatted = format(output, { parser: "typescript" });
-      console.log("*** Output ***");
-      console.log(formatted);
+      // console.log("*** Output ***");
+      // console.log(formatted);
 
       // TODO: Write output to file
       writeToFile(outPath, formatted);
