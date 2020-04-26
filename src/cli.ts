@@ -1,5 +1,7 @@
 import { Command, flags } from "@oclif/command";
 import { format } from "prettier";
+import { writeFileSync, mkdirSync } from "fs";
+import { join, dirname } from "path";
 
 import { readFiles, findGraphqlDocuments, readSchema } from "./parse";
 import { generateTypesString } from "./generate";
@@ -23,11 +25,14 @@ class CLI extends Command {
 
     const config = await getConfig(configPath);
     const {
-      options: { files, schema: schemaPath },
+      options: { files, schema: schemaPath, out: outPath },
     } = config;
 
     const filesToCheck = await readFiles(files);
     const documents: Document[] = filesToCheck
+      // Ignore out out file
+      // TODO: Might be better to convert to absolute before check
+      .filter((e) => e.name !== outPath)
       .map((e) => ({
         ...e,
         documents: findGraphqlDocuments(e),
@@ -39,11 +44,19 @@ class CLI extends Command {
     const schemaText = await readSchema(schemaPath);
     const output = generateTypesString(documents, schemaText, config);
 
+    const formatted = format(output, { parser: "typescript" });
     console.log("*** Output ***");
-    console.log(format(output, { parser: "typescript" }));
+    console.log(formatted);
 
     // TODO: Write output to file
+    writeToFile(outPath, formatted);
   }
+}
+
+function writeToFile(path: string, content: string) {
+  const fp = join(process.cwd(), path);
+  mkdirSync(join(fp, ".."), { recursive: true });
+  writeFileSync(fp, content, { flag: "w" });
 }
 
 interface FileMaybeDocument {

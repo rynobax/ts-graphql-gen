@@ -1,9 +1,5 @@
 # Before Beta
 
-better error message for empty graphql document
-handle json schema
-write out to file
-
 # Before Release
 
 are any directives relevant to the output types, or just ignore them?
