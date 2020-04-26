@@ -50,17 +50,15 @@ export function generateTypesString(
   const schema = buildSchema(schemaText);
   const nodes = documentsToDefinitionNodes(documents, schema);
 
-  const allFragments = flatMap(
-    nodes.map((defs) => defs.filter(isFragmentDefinition))
-  );
+  const allFragments = nodes.map((e) => e.node).filter(isFragmentDefinition);
 
   const result = nodes
-    .map((defs, i) => {
+    .map(({ node, source }) => {
       const trees = definitionNodeToTrees(
-        defs,
+        [node],
         objectTypeMap,
         allFragments,
-        documents[i]
+        source
       );
       return trees
         .filter(nonNull)
@@ -92,19 +90,28 @@ function isFragmentDefinition(
   return node.kind === "FragmentDefinition";
 }
 
-// TODO: Can probably simplify some stuff by having this not return nested array
+interface ParsedDocument {
+  node: DefinitionNode;
+  source: Document;
+}
+
 function documentsToDefinitionNodes(
   documents: Document[],
   schema: GraphQLSchema
-): DefinitionNode[][] {
-  const nodes: DefinitionNode[][] = [];
+): ParsedDocument[] {
+  const nodes: ParsedDocument[] = [];
   let hadErrors = false;
   for (const doc of documents) {
     const { definitions, validationErrors } = documentToDefinitionNodes(
       doc,
       schema
     );
-    nodes.push(definitions);
+    nodes.push(
+      ...definitions.map((node) => ({
+        node,
+        source: doc,
+      }))
+    );
     if (validationErrors.length > 0) {
       hadErrors = true;
       console.error(`GraphQL validation errors in file ${doc.file}:`);
