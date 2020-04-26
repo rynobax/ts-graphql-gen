@@ -1382,3 +1382,47 @@ test("copyDocuemnts", () => {
     }
   );
 });
+
+test("custom scalar", () => {
+  runTest(
+    `
+    schema {
+      query: Query
+    }
+    
+    scalar Date
+    
+    type Query {
+      me: User!
+    }
+    
+    type User {
+      id: String!
+      created: Date
+    }    
+    `,
+    [
+      `
+      query Me {
+        me {
+          id
+          created
+        }
+      }`,
+    ],
+    `
+    export type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        created: moment.Moment | null;
+        id: string;
+      }
+    }
+    `,
+    {
+      ...defaultConfig(),
+      scalars: { Date: "moment.Moment" },
+    }
+  );
+});

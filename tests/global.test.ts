@@ -8,7 +8,7 @@ const fmt = (str: string) => prettierFormat(str, { parser: "typescript" });
 const runTest = (schema: string, expected: string) => {
   expect(
     fmt(
-      globalTypesToString(parse(schema), {
+      globalTypesToString(parse(schema), new Map(), {
         options: { files: "", out: "", schema: "" },
       })
     )
