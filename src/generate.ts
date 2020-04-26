@@ -36,7 +36,6 @@ import {
 import { treeToString } from "./print";
 import { reportParsingErrors, endProcess, printGraphQLError } from "./errors";
 import { globalTypesToString } from "./global";
-import { nonNull } from "./util";
 import { Config } from "./config";
 
 export function generateTypesString(
@@ -54,16 +53,13 @@ export function generateTypesString(
 
   const result = nodes
     .map(({ node, source }) => {
-      const trees = definitionNodeToTrees(
-        [node],
+      const tree = definitionNodeToTrees(
+        node,
         objectTypeMap,
         allFragments,
         source
       );
-      return trees
-        .filter(nonNull)
-        .map((tree) => treeToString(tree, scalarTypeMap, config))
-        .join(EOL);
+      return treeToString(tree, scalarTypeMap, config);
     })
     .join(EOL);
 
@@ -154,51 +150,35 @@ function documentToDefinitionNodes(doc: Document, schema: GraphQLSchema) {
 }
 
 function definitionNodeToTrees(
-  nodes: DefinitionNode[],
+  node: DefinitionNode,
   objectTypeMap: ObjectTypeInfoMap,
   fragments: FragmentDefinitionNode[],
   document: Document
-): Array<OperationPrintTree | null> {
-  const errors: string[] = [];
-
-  const result = nodes.map((node) => {
-    if (!node.loc) throw Error(`No location for document ${document.file}`);
-    // The document might contain multiple operations.  This reduces the document to just
-    // the relevant part
-    const relevantDocument: Document = {
-      file: document.file,
-      content: document.content.slice(node.loc.start, node.loc.end),
-    };
-    try {
-      switch (node.kind) {
-        case "OperationDefinition":
-          return operationToTree(
-            node,
-            objectTypeMap,
-            fragments,
-            relevantDocument
-          );
-        case "FragmentDefinition":
-          // These are written out by global.ts
-          return fragmentToTree(
-            node,
-            objectTypeMap,
-            fragments,
-            relevantDocument
-          );
-        default:
-          throw Error(`Unimplemented node kind ${node.kind}`);
-      }
-    } catch (err) {
-      errors.push(err.message);
-      return null;
+): OperationPrintTree {
+  if (!node.loc) throw Error(`No location for document ${document.file}`);
+  // The document might contain multiple operations.  This reduces the document to just
+  // the relevant part
+  const relevantDocument: Document = {
+    file: document.file,
+    content: document.content.slice(node.loc.start, node.loc.end),
+  };
+  try {
+    switch (node.kind) {
+      case "OperationDefinition":
+        return operationToTree(
+          node,
+          objectTypeMap,
+          fragments,
+          relevantDocument
+        );
+      case "FragmentDefinition":
+        // These are written out by global.ts
+        return fragmentToTree(node, objectTypeMap, fragments, relevantDocument);
+      default:
+        throw Error(`Unimplemented node kind ${node.kind}`);
     }
-  });
-
-  if (errors.length === 0) return result;
-  else {
-    // This will end the process, idk why typescript thinks we need to return
-    reportParsingErrors(errors, document.file);
+  } catch (err) {
+    reportParsingErrors(err.message, document.file);
   }
 }
 
