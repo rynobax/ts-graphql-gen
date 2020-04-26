@@ -53,12 +53,12 @@ function callHooksToString(tree: OperationPrintTree, config: Config): string {
     tree.variablesTypeTree.length > 0
       ? `${tree.outputTypeName}Variables`
       : null;
-  const documentType = `${tree.operationName}Document`;
+  const documentVar = `${tree.operationName}Document`;
 
   switch (tree.rootTypeName) {
     case "Query":
       if (Query)
-        return Query({ operationName, returnType, variableType, documentType });
+        return Query({ operationName, returnType, variableType, documentVar });
       else return "";
     case "Mutation":
       if (Mutation)
@@ -66,7 +66,7 @@ function callHooksToString(tree: OperationPrintTree, config: Config): string {
           operationName,
           returnType,
           variableType,
-          documentType,
+          documentVar,
         });
       else return "";
     default:

@@ -44,12 +44,17 @@ class CLI extends Command {
     const schemaText = await readSchema(schemaPath);
     const output = generateTypesString(documents, schemaText, config);
 
-    const formatted = format(output, { parser: "typescript" });
-    console.log("*** Output ***");
-    console.log(formatted);
+    try {
+      const formatted = format(output, { parser: "typescript" });
+      console.log("*** Output ***");
+      console.log(formatted);
 
-    // TODO: Write output to file
-    writeToFile(outPath, formatted);
+      // TODO: Write output to file
+      writeToFile(outPath, formatted);
+    } catch (err) {
+      console.error("Error formatting output");
+      console.error(err.message);
+    }
   }
 }
 

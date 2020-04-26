@@ -17,7 +17,7 @@ interface OperationBundle {
   operationName: string;
   returnType: string;
   variableType: string | null;
-  documentType: string;
+  documentVar: string;
 }
 
 type OperationFn = (bundle: OperationBundle) => string;
