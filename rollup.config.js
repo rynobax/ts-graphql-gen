@@ -41,7 +41,7 @@ export default [
     output: {
       file: "build/generate-umd.js",
       format: "umd",
-      name: "ts-graphql-gen",
+      name: "TsGraphqlGen",
     },
     plugins: [
       babel({ babelHelpers: "bundled", extensions }),
