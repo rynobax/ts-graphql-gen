@@ -1,6 +1,6 @@
 {
   "name": "ts-graphql-gen",
-  "version": "0.0.5-0",
+  "version": "0.0.6-0",
   "bin": "build/cli.js",
   "repository": "https://github.com/rynobax/ts-graphql-gen.git",
   "author": "Ryan Baxley <ryan.baxley1@gmail.com>",
