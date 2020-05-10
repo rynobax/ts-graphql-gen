@@ -62,4 +62,8 @@ fragment DogAge on AnimalType {
 }
 `;
 
-export const demoConfig = `module.exports = {};`;
+export const demoConfig = `{
+  options: {
+    schema: 'schema.graphql'
+  }
+}`;

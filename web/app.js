@@ -22,12 +22,18 @@ const sections = {
 function App() {
   let output = "";
   try {
-    output = generateTypesString(
+    const config = eval(`(${demoConfig})`);
+    const raw = generateTypesString(
       [{ content: demoDocument, file: "example.ts" }],
       demoSchema,
-      demoConfig
+      config
     );
+    output = prettier.format(raw, {
+      parser: "typescript",
+      plugins: prettierPlugins,
+    });
   } catch (err) {
+    console.error(err);
     output = String(err);
   }
   return html`
