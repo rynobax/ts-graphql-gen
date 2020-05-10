@@ -1,4 +1,5 @@
 const { generateTypesString } = window.TsGraphqlGen;
+import { examples, demoConfig } from "./examples.js";
 
 // graphql does not ship umd version
 const GQL_MODE = "text/plain";
