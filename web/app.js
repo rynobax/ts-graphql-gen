@@ -1,111 +1,71 @@
 const { generateTypesString } = window.TsGraphqlGen;
-import { h, render, Component } from "https://unpkg.com/preact@latest?module";
-import {
-  useRef,
-  useEffect,
-  useState,
-} from "https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module";
-import htm from "https://unpkg.com/htm@latest/dist/htm.module.js?module";
-import { demoSchema, demoDocument, demoConfig } from "./demostuff.js";
-const html = htm.bind(h);
 
 // graphql does not ship umd version
 const GQL_MODE = "text/plain";
 const TS_MODE = "text/typescript";
 
-const sections = {
-  schema: {
-    className: "schema",
-    title: "Schema",
-    defaultContent: demoSchema,
-    language: GQL_MODE,
-  },
-  document: {
-    className: "document",
-    title: "Document",
-    defaultContent: demoDocument,
-    language: GQL_MODE,
-  },
-  config: {
-    className: "config",
-    title: "Config",
-    defaultContent: demoConfig,
-    language: TS_MODE,
-  },
-};
-
-function App() {
-  let output = "";
+function getContent(document, schema) {
   try {
     const config = eval(`(${demoConfig})`);
     const raw = generateTypesString(
-      [{ content: demoDocument, file: "example.ts" }],
-      demoSchema,
+      [{ content: document, file: "example.ts" }],
+      schema,
       config
     );
-    output = prettier.format(raw, {
+    return prettier.format(raw, {
       parser: "typescript",
       plugins: prettierPlugins,
     });
   } catch (err) {
     console.error(err);
-    output = String(err);
-  }
-  return html`
-    <div class="container">
-      <div class="column">
-        <${Section} section=${sections.schema} />
-        <${Section} section=${sections.document} />
-      </div>
-      <div class="column">
-        <${Section} section=${sections.config} />
-        <${Section}
-          section=${{
-            className: "output",
-            title: "Output",
-            defaultContent: output,
-            language: TS_MODE,
-          }}
-        />
-      </div>
-    </div>
-  `;
-}
-
-class Section extends Component {
-  constructor() {
-    super();
-    this.state = { initialized: false };
-  }
-
-  shouldComponentUpdate() {
-    return false;
-  }
-
-  render() {
-    const { section } = this.props;
-    return html`
-      <div class="section ${section.className}">
-        <div class="header">${section.title}</div>
-        <textarea
-          ref=${(ref) => {
-            if (!ref || this.state.initialized) return;
-            this.setState({ initialized: true });
-            const codeMirror = CodeMirror.fromTextArea(ref, {
-              lineNumbers: true,
-              mode: section.language,
-              theme: "dracula",
-            });
-            setTimeout(() => {
-              codeMirror.setValue(section.defaultContent);
-              codeMirror.refresh();
-            }, 1);
-          }}
-        >
-        </textarea>
-      </div>
-    `;
+    return String(err);
   }
 }
 
-render(html`<${App} />`, document.body);
+const schemaTa = document.getElementById("ta-schema");
+const documentTa = document.getElementById("ta-document");
+const configTa = document.getElementById("ta-config");
+const outputTa = document.getElementById("ta-output");
+
+const sharedOptions = { lineNumbers: true, theme: "dracula" };
+
+const schemaCM = CodeMirror.fromTextArea(schemaTa, {
+  ...sharedOptions,
+  mode: GQL_MODE,
+});
+const documentCM = CodeMirror.fromTextArea(documentTa, {
+  ...sharedOptions,
+  mode: GQL_MODE,
+});
+const configCM = CodeMirror.fromTextArea(configTa, {
+  ...sharedOptions,
+  mode: TS_MODE,
+});
+const outputCM = CodeMirror.fromTextArea(outputTa, {
+  ...sharedOptions,
+  mode: TS_MODE,
+  readOnly: true,
+});
+
+const inputCMs = [schemaCM, documentCM, configCM];
+
+function selectExample(ndx) {
+  const { documents, schema } = examples[ndx];
+  schemaCM.setValue(schema);
+  documentCM.setValue(documents);
+  configCM.setValue(demoConfig);
+  outputCM.setValue(getContent(documents, schema));
+}
+
+function main() {
+  selectExample(0);
+  inputCMs.forEach((cm) => {
+    cm.on("change", () => {
+      const newSchema = schemaCM.getValue();
+      const newDocument = documentCM.getValue();
+      outputCM.setValue(getContent(newDocument, newSchema));
+    });
+  });
+}
+
+main();

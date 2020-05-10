@@ -1,4 +1,39 @@
-export const demoSchema = `schema {
+export const examples = [
+  {
+    title: "Basic",
+    schema: `schema {
+  query: Query
+}
+
+type Query {
+  me: User!
+  user(id: String!): User!
+}
+
+type User {
+  id: String!
+  email: String
+  bio: String
+  logins: [Int!]!
+  friends: [User!]!
+  name: Name!
+}
+
+type Name {
+  first: String!
+  last: String!
+}
+`,
+    documents: `query Me {
+  me {
+    id
+    bio
+  }
+}`,
+  },
+  {
+    title: "Complex Unions",
+    schema: `schema {
   query: Query
 }
 
@@ -30,9 +65,8 @@ type Dog {
 type Cat {
   age: Age!
 }
-`;
-
-export const demoDocument = `query GetAnimal {
+    `,
+    document: `query GetAnimal {
   animal {
     type {
       ... on Dog {
@@ -60,7 +94,9 @@ fragment DogAge on AnimalType {
     }
   }
 }
-`;
+    `,
+  },
+];
 
 export const demoConfig = `{
   options: {

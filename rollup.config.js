@@ -50,6 +50,7 @@ export default [
       builtins(),
       replace({
         "process.env.NODE_ENV": '"production"',
+        "process.exit(1);": "return;",
       }),
     ],
   },
