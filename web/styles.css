@@ -1,0 +1,50 @@
+body {
+  font-family: "Open Sans", sans-serif;
+}
+
+.container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+}
+
+.column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.schema {
+  flex: 1;
+}
+
+.document {
+  flex: 1;
+}
+
+.config {
+  flex: 1;
+}
+
+.output {
+  flex: 1;
+}
+
+.section {
+  margin: 0px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pre {
+  margin: 0 !important;
+  flex: 1;
+}
+
+.header {
+  font-size: 18px;
+  font-weight: 700;
+  padding: 8px;
+  flex: 0;
+}
