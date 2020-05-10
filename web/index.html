@@ -2,22 +2,40 @@
 <html>
   <head>
     <title>ts-graphql-gen Demo</title>
-    <!-- Dependencies -->
     <!-- TODO: Change script to not have version when cache updates -->
+    <!-- ts-graphql-gen -->
     <script
       type="module"
       src="https://unpkg.com/ts-graphql-gen@0.0.6-0/build/generate-umd.js"
     ></script>
-    <script src="prism.js"></script>
+
+    <!-- CodeMirror -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/mode/javascript/javascript.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/codemirror.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/theme/dracula.css"
+    />
+
+    <!-- Prettier -->
     <script src="https://unpkg.com/prettier/standalone.js"></script>
     <script src="https://unpkg.com/prettier/parser-typescript.js"></script>
-    <link href="prism.css" rel="stylesheet" />
+
+    <!-- CSS Reset -->
     <link rel="stylesheet" href="reset.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
 
-    <!-- Our code -->
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- App code -->
     <link rel="stylesheet" href="styles.css" />
-
     <script type="module" defer src="app.js"></script>
   </head>
   <body></body>

@@ -48,3 +48,7 @@ body {
   padding: 8px;
   flex: 0;
 }
+
+[contenteditable] {
+  outline: 0px solid transparent;
+}
