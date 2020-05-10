@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "local": "node .\\build\\cli.js -c ../localtesting/ts-graphql-gen.config.js"
+    "local": "node .\\build\\cli.js -c ../localtesting/ts-graphql-gen.config.js",
+    "release": "np"
   },
   "files": [
     "build"
@@ -35,6 +36,7 @@
     "husky": "^4.2.3",
     "jest": "^25.2.4",
     "lint-staged": "^10.1.1",
+    "np": "^6.2.3",
     "prettier": "^2.0.2",
     "typescript": "^3.8.3"
   },
