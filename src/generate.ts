@@ -17,7 +17,8 @@ import {
   SelectionSetNode,
   GraphQLError,
 } from "graphql";
-import { capitalize, flatMap } from "lodash";
+import capitalize from "lodash/capitalize";
+import flatMap from "lodash/flatMap";
 
 import {
   Document,

@@ -1,5 +1,5 @@
 import { EOL } from "os";
-import { uniq } from "lodash";
+import uniq from "lodash/uniq";
 
 import {
   SchemaTypeSummary,

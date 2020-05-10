@@ -44,6 +44,7 @@
     "np": "^6.2.3",
     "prettier": "^2.0.2",
     "rollup": "^2.9.0",
+    "rollup-plugin-node-builtins": "^2.1.2",
     "typescript": "^3.8.3"
   },
   "husky": {
