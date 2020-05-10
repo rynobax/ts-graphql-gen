@@ -22,10 +22,9 @@ type Name {
 }
 `;
 
-export const examples = [
+export const examples = {
   // Basic
-  {
-    id: "basic",
+  basic: {
     schema: simpleSchema,
     documents: `query Me {
   me {
@@ -35,8 +34,7 @@ export const examples = [
 }`,
   },
   // Union
-  {
-    id: "union",
+  union: {
     schema: `schema {
   query: Query
 }
@@ -101,8 +99,7 @@ fragment DogAge on AnimalType {
     `,
   },
   // Fragments
-  {
-    id: "fragments",
+  fragments: {
     schema: simpleSchema,
     documents: `query Me {
   me {
@@ -115,10 +112,80 @@ fragment Bio on User {
   email
 }`,
   },
-];
+};
 
-export const demoConfig = `{
+export const configs = {
+  basic: `export default {
   options: {
-    schema: 'schema.graphql'
+    files: "src/*.ts",
+    schema: "schema.graphql",
+    out: "src/graphqlTypes.tsx",
   }
-}`;
+}`,
+  apolloReact: `function makeGeneric(returnType, variableType) {
+  if (variableType) return \`\${returnType}, \${variableType}\`;
+  else return \`\${returnType}\`;
+}
+
+function hooksHeader() {
+  return \`import { QueryComponentOptions, MutationComponentOptions } from '@apollo/react-components';\`;
+}
+
+function queryHook({ operationName, returnType, variableType, documentVar }) {
+  return \`
+  export function use\${operationName}Query(
+    options?: QueryHookOptions<\${makeGeneric(returnType, variableType)}>
+  ) {
+    return useQuery<\${makeGeneric(
+      returnType,
+      variableType
+    )}>(\${documentVar}, options);
+  }
+  \`;
+}
+
+function mutationHook({
+  operationName,
+  returnType,
+  variableType,
+  documentVar,
+}) {
+  return \`
+  export function use\${operationName}Mutation(
+    options?: MutationHookOptions<\${makeGeneric(returnType, variableType)}>
+  ) {
+    return useMutation<\${makeGeneric(
+      returnType,
+      variableType
+    )}>(\${documentVar}, options);
+  }
+  \`;
+}
+
+export default {
+  options: {
+    files: "localtesting/*.ts",
+    schema: "localtesting/schema.graphql",
+    out: "localtesting/result.tsx",
+    copyDocuments: true,
+  },
+  scalars: {
+    Date: "moment.Moment",
+  },
+  hooks: {
+    header: () => {
+      return \`
+      /* THIS IS A GENERATED FILE, DO NOT EDIT DIRECTLY */
+      \${hooksHeader()}
+      \`;
+    },
+    Query: (info) => {
+      return queryHook(info);
+    },
+    Mutation: (info) => {
+      return mutationHook(info);
+    },
+  },
+};
+`,
+};

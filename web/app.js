@@ -1,5 +1,5 @@
 const { generateTypesString } = window.TsGraphqlGen;
-import { examples, demoConfig } from "./examples.js";
+import { examples, configs } from "./examples.js";
 
 function debounce(func, wait, immediate) {
   var timeout;
@@ -27,13 +27,15 @@ function debounce(func, wait, immediate) {
 const GQL_MODE = "text/plain";
 const TS_MODE = "text/typescript";
 
-function getContent(document, schema) {
+async function getContent(document, schema, config) {
   try {
-    const config = eval(`(${demoConfig})`);
+    const encodedConfig = encodeURIComponent(config);
+    const dataUri = "data:text/javascript;charset=utf-8," + encodedConfig;
+    const parsedConfig = (await import(dataUri)).default;
     const raw = generateTypesString(
       [{ content: document, file: "example.ts" }],
       schema,
-      config
+      parsedConfig
     );
     return prettier.format(raw, {
       parser: "typescript",
@@ -72,10 +74,14 @@ const outputCM = CodeMirror.fromTextArea(outputTa, {
 const inputCMs = [schemaCM, documentCM, configCM];
 
 function selectExample(id) {
-  const { documents, schema } = examples.find((e) => e.id === id);
+  const { documents, schema } = examples[id];
   schemaCM.setValue(schema);
   documentCM.setValue(documents);
-  configCM.setValue(demoConfig);
+}
+
+function selectConfig(id) {
+  const config = configs[id];
+  configCM.setValue(config);
 }
 
 function main() {
@@ -83,10 +89,13 @@ function main() {
     cm.on(
       "change",
       debounce(
-        () => {
+        async () => {
           const newSchema = schemaCM.getValue();
           const newDocument = documentCM.getValue();
-          outputCM.setValue(getContent(newDocument, newSchema));
+          const newConfig = configCM.getValue();
+          outputCM.setValue(
+            await getContent(newDocument, newSchema, newConfig)
+          );
         },
         50,
         false
@@ -94,9 +103,13 @@ function main() {
     );
   });
   selectExample("basic");
+  selectConfig("basic");
 
-  const dropdown = document.getElementById("example-select");
-  dropdown.onchange = (e) => selectExample(e.target.value);
+  const exampleDropdown = document.getElementById("example-select");
+  exampleDropdown.onchange = (e) => selectExample(e.target.value);
+
+  const configDropdown = document.getElementById("config-select");
+  configDropdown.onchange = (e) => selectConfig(e.target.value);
 }
 
 main();

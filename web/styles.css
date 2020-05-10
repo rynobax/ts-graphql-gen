@@ -53,6 +53,10 @@ body {
   flex: 1;
 }
 
+.configSelect {
+  font-size: 16px;
+}
+
 .output {
   flex: 1;
 }
