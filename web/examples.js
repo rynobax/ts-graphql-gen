@@ -1,7 +1,4 @@
-export const examples = [
-  {
-    title: "Basic",
-    schema: `schema {
+const simpleSchema = `schema {
   query: Query
 }
 
@@ -23,7 +20,13 @@ type Name {
   first: String!
   last: String!
 }
-`,
+`;
+
+export const examples = [
+  // Basic
+  {
+    id: "basic",
+    schema: simpleSchema,
     documents: `query Me {
   me {
     id
@@ -31,8 +34,9 @@ type Name {
   }
 }`,
   },
+  // Union
   {
-    title: "Complex Unions",
+    id: "union",
     schema: `schema {
   query: Query
 }
@@ -66,7 +70,7 @@ type Cat {
   age: Age!
 }
     `,
-    document: `query GetAnimal {
+    documents: `query GetAnimal {
   animal {
     type {
       ... on Dog {
@@ -95,6 +99,21 @@ fragment DogAge on AnimalType {
   }
 }
     `,
+  },
+  // Fragments
+  {
+    id: "fragments",
+    schema: simpleSchema,
+    documents: `query Me {
+  me {
+    id
+    ...Bio
+  }
+}
+fragment Bio on User {
+  bio
+  email
+}`,
   },
 ];
 

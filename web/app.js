@@ -1,6 +1,28 @@
 const { generateTypesString } = window.TsGraphqlGen;
 import { examples, demoConfig } from "./examples.js";
 
+function debounce(func, wait, immediate) {
+  var timeout;
+
+  return function executedFunction() {
+    var context = this;
+    var args = arguments;
+
+    var later = function () {
+      timeout = null;
+      if (!immediate) func.apply(context, args);
+    };
+
+    var callNow = immediate && !timeout;
+
+    clearTimeout(timeout);
+
+    timeout = setTimeout(later, wait);
+
+    if (callNow) func.apply(context, args);
+  };
+}
+
 // graphql does not ship umd version
 const GQL_MODE = "text/plain";
 const TS_MODE = "text/typescript";
@@ -49,23 +71,32 @@ const outputCM = CodeMirror.fromTextArea(outputTa, {
 
 const inputCMs = [schemaCM, documentCM, configCM];
 
-function selectExample(ndx) {
-  const { documents, schema } = examples[ndx];
+function selectExample(id) {
+  const { documents, schema } = examples.find((e) => e.id === id);
   schemaCM.setValue(schema);
   documentCM.setValue(documents);
   configCM.setValue(demoConfig);
-  outputCM.setValue(getContent(documents, schema));
 }
 
 function main() {
-  selectExample(0);
   inputCMs.forEach((cm) => {
-    cm.on("change", () => {
-      const newSchema = schemaCM.getValue();
-      const newDocument = documentCM.getValue();
-      outputCM.setValue(getContent(newDocument, newSchema));
-    });
+    cm.on(
+      "change",
+      debounce(
+        () => {
+          const newSchema = schemaCM.getValue();
+          const newDocument = documentCM.getValue();
+          outputCM.setValue(getContent(newDocument, newSchema));
+        },
+        50,
+        false
+      )
+    );
   });
+  selectExample("basic");
+
+  const dropdown = document.getElementById("example-select");
+  dropdown.onchange = (e) => selectExample(e.target.value);
 }
 
 main();

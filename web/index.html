@@ -4,10 +4,7 @@
     <title>ts-graphql-gen Demo</title>
     <!-- TODO: Change script to not have version when cache updates -->
     <!-- ts-graphql-gen -->
-    <script
-      type="module"
-      src="build/generate-umd.js"
-    ></script>
+    <script type="module" src="build/generate-umd.js"></script>
 
     <!-- CodeMirror -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/codemirror.min.js"></script>
@@ -40,24 +37,39 @@
   </head>
   <body>
     <div class="container">
-      <div class="column">
-        <div class="section schema">
-          <div class="header">Schema</div>
-          <textarea id="ta-schema"></textarea>
-        </div>
-        <div class="section document">
-          <div class="header">Document</div>
-          <textarea id="ta-document"></textarea>
+      <div class="header">
+        <div class="headerText">ts-graphql-gen Sandbox</div>
+        <div class="row">
+          <div class="headerSubtitle">
+            Edit the boxes to see things change, or select examples here ->
+          </div>
+          <select id="example-select">
+            <option value="basic">Basic</option>
+            <option value="fragments">Fragments</option>
+            <option value="union">Complex Union</option>
+          </select>
         </div>
       </div>
-      <div class="column">
-        <div class="section config">
-          <div class="header">Config</div>
-          <textarea id="ta-config"></textarea>
+      <div class="boxes">
+        <div class="column">
+          <div class="section schema">
+            <div class="sectionHeader">Schema</div>
+            <textarea id="ta-schema"></textarea>
+          </div>
+          <div class="section document">
+            <div class="sectionHeader">Document</div>
+            <textarea id="ta-document"></textarea>
+          </div>
         </div>
-        <div class="section output">
-          <div class="header">Output</div>
-          <textarea id="ta-output"></textarea>
+        <div class="column">
+          <div class="section config">
+            <div class="sectionHeader">Config</div>
+            <textarea id="ta-config"></textarea>
+          </div>
+          <div class="section output">
+            <div class="sectionHeader">Output</div>
+            <textarea id="ta-output"></textarea>
+          </div>
         </div>
       </div>
     </div>
