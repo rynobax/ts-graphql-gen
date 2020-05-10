@@ -2,6 +2,7 @@ import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
 import babel from "@rollup/plugin-babel";
 import builtins from "rollup-plugin-node-builtins";
+import replace from "@rollup/plugin-replace";
 
 const extensions = [".ts", ".js", ".json"];
 
@@ -47,6 +48,9 @@ export default [
       resolve({ extensions, rootDir: "src" }),
       commonjs({ extensions }),
       builtins(),
+      replace({
+        "process.env.NODE_ENV": '"production"',
+      }),
     ],
   },
 ];

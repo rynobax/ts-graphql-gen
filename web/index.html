@@ -2,11 +2,7 @@
 <html>
   <head>
     <title>ts-graphql-gen Demo</title>
-    <script>
-      // Files are in commonjs
-      exports = {};
-    </script>
-    <script type="module" src="https://unpkg.com/ts-graphql-gen/build/generate.js"></script>
+    <script type="module" src="https://unpkg.com/ts-graphql-gen@0.0.4-0/build/generate-umd.js"></script>
     <script type="module" defer>
       const { generateTypesString } = window;
       import { h, Component, render } from "https://unpkg.com/preact?module";
