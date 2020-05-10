@@ -18,8 +18,7 @@ function getContent(document, schema) {
       plugins: prettierPlugins,
     });
   } catch (err) {
-    console.error(err);
-    return String(err);
+    return err.message;
   }
 }
 

@@ -39,7 +39,7 @@ export default [
   {
     input: "src/generate.ts",
     output: {
-      file: "build/generate-umd.js",
+      file: "web/build/generate-umd.js",
       format: "umd",
       name: "TsGraphqlGen",
     },
@@ -50,7 +50,7 @@ export default [
       builtins(),
       replace({
         "process.env.NODE_ENV": '"production"',
-        "process.exit(1)": "return",
+        "process.exit(1);": "",
         delimiters: ["", ""],
       }),
     ],

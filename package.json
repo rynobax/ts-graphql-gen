@@ -10,7 +10,8 @@
     "watch": "rollup -c -w",
     "test": "jest",
     "local": "node .\\build\\cli.js -c ../localtesting/ts-graphql-gen.config.js",
-    "release": "yarn build && np"
+    "release": "yarn build && np",
+    "typecheck": "tsc -w"
   },
   "files": [
     "build"

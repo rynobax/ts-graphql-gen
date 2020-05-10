@@ -114,8 +114,12 @@ function parseSchemaOrThrow(schemaText: string, location: string) {
     return schemaNodes;
   } catch (err) {
     if (err instanceof GraphQLError) {
-      printGraphQLError(err, { content: schemaText, file: location }, "schema");
-      endProcess();
+      const msg = printGraphQLError(
+        err,
+        { content: schemaText, file: location },
+        "schema"
+      );
+      endProcess(msg);
     }
     throw err;
   }
@@ -137,7 +141,7 @@ function documentsToDefinitionNodes(
   schema: GraphQLSchema
 ): ParsedDocument[] {
   const nodes: ParsedDocument[] = [];
-  let hadErrors = false;
+  let errorMsg: string | null = null;
   for (const doc of documents) {
     const { definitions, validationErrors } = documentToDefinitionNodes(
       doc,
@@ -153,14 +157,14 @@ function documentsToDefinitionNodes(
       }))
     );
     if (validationErrors.length > 0) {
-      hadErrors = true;
-      console.error(`GraphQL validation errors in file ${doc.file}:`);
+      errorMsg = `GraphQL validation errors in file ${doc.file}:`;
       validationErrors.forEach((e) => {
-        console.error(`  - ${e.message}`);
+        errorMsg += `${EOL}  - ${e.message}`;
       });
+      console.error(errorMsg);
     }
   }
-  if (hadErrors) endProcess();
+  if (errorMsg) endProcess(errorMsg);
   return nodes;
 }
 
@@ -184,12 +188,12 @@ function documentToDefinitionNodes(doc: Document, schema: GraphQLSchema) {
   } catch (err) {
     if (err instanceof GraphQLError) {
       console.log(err);
-      printGraphQLError(err, doc, "GraphQL document");
-      endProcess();
+      const msg = printGraphQLError(err, doc, "GraphQL document");
+      endProcess(msg);
     }
-    console.error(`Error parsing document "${doc.file}"`);
-    console.error(err);
-    endProcess();
+    let errorMsg = `Error parsing document "${doc.file}"`;
+    errorMsg += EOL + String(err);
+    endProcess(errorMsg);
   }
 }
 
@@ -213,7 +217,7 @@ function definitionNodeToTrees(
         throw Error(`Unimplemented node kind ${node.kind}`);
     }
   } catch (err) {
-    reportParsingErrors(err.message, document.file);
+    reportParsingErrors([(err as Error).message], document.file);
   }
 }
 
