@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
+    "test": "jest",
     "local": "node .\\build\\cli.js -c ../localtesting/ts-graphql-gen.config.js",
     "release": "yarn build && np"
   },
@@ -47,5 +48,8 @@
   },
   "lint-staged": {
     "*.{ts,js,css,md}": "prettier --write"
+  },
+  "np": {
+    "yarn": true
   }
 }
