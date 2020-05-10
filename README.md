@@ -9,3 +9,4 @@ Generate typescript types from graphql schema + documents.
 - test on more real apps
 - add recipes to repo
 - readme + documentation
+- test built files before publish
