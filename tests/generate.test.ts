@@ -228,6 +228,12 @@ test("basic fragment", () => {
       `,
     ],
     `
+    export type BioFragment = {
+      __typename: 'User';
+      bio: string | null;
+      email: string | null;
+    }
+
     export type MeQuery = {
       __typename: 'Query';
       me: {
@@ -236,12 +242,6 @@ test("basic fragment", () => {
         email: string | null;
         id: string;
       }
-    }
-
-    export type BioFragment = {
-      __typename: 'User';
-      bio: string | null;
-      email: string | null;
     }
     `
   );
@@ -265,6 +265,14 @@ test("fragment with object", () => {
       `,
     ],
     `
+    export type FriendsFragment = {
+      __typename: 'User';
+      friends: Array<{
+        __typename: 'User';
+        id: string;
+      }>
+    }
+
     export type MeQuery = {
       __typename: 'Query';
       me: {
@@ -274,14 +282,6 @@ test("fragment with object", () => {
           id: string;
         }>
       }
-    }
-
-    export type FriendsFragment = {
-      __typename: 'User';
-      friends: Array<{
-        __typename: 'User';
-        id: string;
-      }>
     }
     `
   );
@@ -311,20 +311,6 @@ test("multiple fragments", () => {
       `,
     ],
     `
-    export type MeQuery = {
-      __typename: 'Query';
-      me: {
-        __typename: 'User';
-        bio: string | null;
-        email: string | null;
-        friends: Array<{
-          __typename: 'User';
-          id: string;
-        }>
-        id: string;
-      }
-    }
-
     export type BioFragment = {
       __typename: 'User';
       bio: string | null;
@@ -337,6 +323,20 @@ test("multiple fragments", () => {
         __typename: 'User';
         id: string;
       }>
+    }
+
+    export type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        bio: string | null;
+        email: string | null;
+        friends: Array<{
+          __typename: 'User';
+          id: string;
+        }>
+        id: string;
+      }
     }
     `
   );
@@ -367,6 +367,22 @@ test("nested fragments", () => {
       `,
     ],
     `
+    export type BioFragment = {
+      __typename: "User";
+      bio: string | null;
+      email: string | null;
+    };
+
+    export type FriendsFragment = {
+      __typename: "User";
+      friends: Array<{
+        __typename: "User";
+        bio: string | null;
+        email: string | null;
+        id: string;
+      }>;
+    };
+
     export type MeQuery = {
       __typename: 'Query';
       me: {
@@ -379,22 +395,6 @@ test("nested fragments", () => {
         }>
       }
     }
-
-    export type FriendsFragment = {
-      __typename: "User";
-      friends: Array<{
-        __typename: "User";
-        bio: string | null;
-        email: string | null;
-        id: string;
-      }>;
-    };
-
-    export type BioFragment = {
-      __typename: "User";
-      bio: string | null;
-      email: string | null;
-    };
     `
   );
 });
@@ -419,6 +419,12 @@ test("Duplicated fields", () => {
       `,
     ],
     `
+    export type DuplicateFragFragment = {
+      __typename: "User";
+      email: string | null;
+      id: string;
+    };
+
     export type MeQuery = {
       __typename: 'Query';
       me: {
@@ -427,12 +433,6 @@ test("Duplicated fields", () => {
         id: string;
       }
     }
-
-    export type DuplicateFragFragment = {
-      __typename: "User";
-      email: string | null;
-      id: string;
-    };
     `
   );
 });
@@ -758,6 +758,18 @@ test("nested unions", () => {
       `,
     ],
     `
+    export type DogAgeFragment = {
+      __typename: 'Cat';
+    } | {
+      __typename: 'Dog';
+      age:  {
+        __typename: 'Known';
+        months: number;
+      } | {
+        __typename: 'Unknown';
+      }
+    }
+
     export type GetAnimalQuery = {
       __typename: 'Query';
       animal: {
@@ -774,18 +786,6 @@ test("nested unions", () => {
             __typename: 'Unknown';
           }
         }
-      }
-    }
-
-    export type DogAgeFragment = {
-      __typename: 'Cat';
-    } | {
-      __typename: 'Dog';
-      age:  {
-        __typename: 'Known';
-        months: number;
-      } | {
-        __typename: 'Unknown';
       }
     }
     `
