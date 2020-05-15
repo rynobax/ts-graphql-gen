@@ -3,7 +3,10 @@ export interface Config {
     files: string;
     schema: string;
     out: string;
+    // TODO: Could probably check if user is trying to use this in a hook
+    // (using String.includes once), and warn them if it's off
     copyDocuments?: boolean;
+    optionalInputs?: boolean;
   };
   hooks?: {
     header?: () => string;
@@ -42,7 +45,7 @@ export async function getConfig(path: string): Promise<Config> {
       if (typeof options !== "object")
         throw Error("Key 'options' is not an object");
 
-      const { files, schema, out, copyDocuments } = options;
+      const { files, schema, out, copyDocuments, optionalInputs } = options;
 
       if (typeof files !== "string")
         throw Error("Key 'options.files' is not a string");
@@ -52,6 +55,8 @@ export async function getConfig(path: string): Promise<Config> {
         throw Error("Key 'options.out' is not a string");
       if (copyDocuments !== undefined && typeof copyDocuments !== "boolean")
         throw Error("Key 'options.copyDocuments' is not a boolean");
+      if (optionalInputs !== undefined && typeof optionalInputs !== "boolean")
+        throw Error("Key 'options.optionalInputs' is not a boolean");
 
       if (hooks) {
         if (typeof hooks !== "object")

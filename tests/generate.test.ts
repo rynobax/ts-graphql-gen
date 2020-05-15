@@ -1486,3 +1486,53 @@ test("custom enum", () => {
     }
   );
 });
+
+test("mutation optionalInputs", () => {
+  runTest(
+    `
+  schema {
+    query: Query
+    mutation: Mutation
+  }
+
+  type Query {
+    id: Int
+  }
+
+  type Mutation {
+    createUser(input: CreateUserInput): Int!
+  }
+
+  input CreateUserInput {
+    name: String
+  }
+  `,
+    [
+      `
+    mutation NewUser($input: CreateUserInput!) {
+      createUser(input: $input)
+    }
+    `,
+    ],
+    `
+    export type CreateUserInput = {
+      name?: string | null;
+    };
+
+    export type NewUserMutation = {
+      __typename: 'Mutation';
+      createUser: number;
+    }
+
+    export type NewUserMutationVariables = {
+      input: CreateUserInput;
+    }
+    `,
+    {
+      options: {
+        ...defaultConfig().options,
+        optionalInputs: true,
+      },
+    }
+  );
+});

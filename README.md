@@ -4,11 +4,11 @@ Generate typescript types from graphql schema + documents.
 
 # TODO
 
-- optional input config?
 - test on more real apps
 - add recipes to repo
 - readme + documentation
 - test built files before publish
+- change where gql is imported from
 
 ## Why not graphql-code-generator?
 

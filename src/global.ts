@@ -32,7 +32,7 @@ export function globalTypesToString(
     config.hooks?.header ? config.hooks.header() : "",
     // TODO: How can user change this?
     config.options.copyDocuments ? "import gql from 'graphql-tag'" : "",
-    ...inputTypes.map((t) => inputTypeToString(t, scalarTypeMap)),
+    ...inputTypes.map((t) => inputTypeToString(t, scalarTypeMap, config)),
     ...enumTypes.map((e) => enumTypeToString(e, config)),
   ].join(EOL);
 }
@@ -56,15 +56,19 @@ function enumTypeToString(
 
 function inputTypeToString(
   node: InputObjectTypeDefinitionNode,
-  scalarTypeMap: ScalarTypeInfoMap
+  scalarTypeMap: ScalarTypeInfoMap,
+  config: Config
 ): string {
   // It's a scalar
   if (!node.fields) return "";
+
+  const optional = config.options.optionalInputs ? "?" : "";
+
   const content = node.fields
     .map((f) => {
       const key = f.name.value;
       const value = schemaTypeToString(typeToSchemaType(f.type), scalarTypeMap);
-      return `${key}: ${value};`;
+      return `${key}${optional}: ${value};`;
     })
     .join(EOL);
 
