@@ -33,14 +33,24 @@ export function globalTypesToString(
     // TODO: How can user change this?
     config.options.copyDocuments ? "import gql from 'graphql-tag'" : "",
     ...inputTypes.map((t) => inputTypeToString(t, scalarTypeMap)),
-    ...enumTypes.map(enumTypeToString),
+    ...enumTypes.map((e) => enumTypeToString(e, config)),
   ].join(EOL);
 }
 
-function enumTypeToString(node: EnumTypeDefinitionNode): string {
+function enumTypeToString(
+  node: EnumTypeDefinitionNode,
+  config: Config
+): string {
   const name = node.name.value;
-  if (!node.values) throw Error(`Enum ${name} has no values!`);
-  const value = node.values.map((v) => `"${v.name.value}"`).join(" | ");
+  const valueNodes = node.values;
+  if (!valueNodes) throw Error(`Enum ${name} has no values!`);
+  const values = valueNodes.map((e) => e.name.value);
+
+  // User override
+  if (config.hooks?.Enum) return config.hooks.Enum({ name, values });
+
+  // Default, string union
+  const value = values.map((v) => `"${v}"`).join(" | ");
   return `export type ${name} = ${value};`;
 }
 

@@ -9,18 +9,26 @@ export interface Config {
     header?: () => string;
     Query?: OperationFn;
     Mutation?: OperationFn;
+    Enum?: EnumFn;
   };
   scalars?: Record<string, string>;
 }
 
-interface OperationBundle {
+interface OperationInfo {
   operationName: string;
   returnType: string;
   variableType: string | null;
   documentVar: string;
 }
 
-type OperationFn = (bundle: OperationBundle) => string;
+type OperationFn = (bundle: OperationInfo) => string;
+
+interface EnumInfo {
+  name: string;
+  values: string[];
+}
+
+type EnumFn = (bundle: EnumInfo) => string;
 
 export async function getConfig(path: string): Promise<Config> {
   try {
@@ -48,11 +56,13 @@ export async function getConfig(path: string): Promise<Config> {
       if (hooks) {
         if (typeof hooks !== "object")
           throw Error("Key 'hooks' is not an object");
-        const { Query, Mutation } = hooks;
+        const { Query, Mutation, Enum } = hooks;
         if (Query && typeof Query !== "function")
           throw Error("Key 'hooks.Query' is not a function");
         if (Mutation && typeof Mutation !== "function")
           throw Error("Key 'hooks.Mutation' is not a function");
+        if (Enum && typeof Enum !== "function")
+          throw Error("Key 'hooks.Enum' is not a function");
       }
 
       if (scalars) {

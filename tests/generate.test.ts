@@ -1426,3 +1426,63 @@ test("custom scalar", () => {
     }
   );
 });
+
+test("custom enum", () => {
+  runTest(
+    `
+    schema {
+      query: Query
+    }
+    
+    type Query {
+      me: User!
+    }
+
+    enum UserType {
+      admin
+      viewer
+    }
+    
+    type User {
+      id: String!
+      type: UserType
+    }    
+    `,
+    [
+      `
+      query Me {
+        me {
+          id
+          type
+        }
+      }`,
+    ],
+    `
+    export enum UserType {
+      admin,
+      viewer,
+    } 
+
+    export type MeQuery = {
+      __typename: 'Query';
+      me: {
+        __typename: 'User';
+        id: string;
+        type: UserType | null;
+      }
+    }
+    `,
+    {
+      ...defaultConfig(),
+      hooks: {
+        Enum: ({ name, values }) => {
+          return `
+            export enum ${name} {
+              ${values.join(",\n")}
+            }
+          `;
+        },
+      },
+    }
+  );
+});
