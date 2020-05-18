@@ -1,3 +1,5 @@
+import { join } from "path";
+
 export interface Config {
   options: {
     files: string;
@@ -35,7 +37,8 @@ type EnumFn = (bundle: EnumInfo) => string;
 
 export async function getConfig(path: string): Promise<Config> {
   try {
-    const maybeConfig = await import(path);
+    const resolvedPath = join(process.cwd(), path);
+    const maybeConfig = await import(resolvedPath);
 
     try {
       if (typeof maybeConfig !== "object")
