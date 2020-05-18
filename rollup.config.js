@@ -11,6 +11,7 @@ export default [
   {
     input: "src/cli.ts",
     output: {
+      banner: "#!/usr/bin/env node",
       dir: "build",
       format: "cjs",
     },
