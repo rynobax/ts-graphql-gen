@@ -1,4 +1,4 @@
-# ts-graphql-gen
+# ts-graphql-gen (WIP)
 
 Generate typescript types from graphql schema + documents.
 
