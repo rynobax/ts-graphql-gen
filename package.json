@@ -9,7 +9,7 @@
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "test": "jest",
-    "local": "node .\\build\\cli.js -c ../localtesting/ts-graphql-gen.config.js",
+    "local": "node .\\build\\cli.js -c localtesting/ts-graphql-gen.config.js",
     "release": "yarn build && np",
     "typecheck": "tsc -w"
   },
@@ -24,6 +24,7 @@
     "@oclif/config": "^1.14.0",
     "@oclif/errors": "^1.2.2",
     "@oclif/plugin-help": "^2.2.3",
+    "chokidar": "^3.4.0",
     "glob": "^7.1.6",
     "graphql": "^15.0.0",
     "lodash": "^4.17.15",

@@ -5,6 +5,7 @@ Generate typescript types from graphql schema + documents.
 # TODO
 
 - watch mode (warn if watching too many files)
+- add progress messages
 - test on more real apps
 - add recipes to repo
 - readme + documentation

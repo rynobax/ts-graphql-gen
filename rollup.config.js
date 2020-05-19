@@ -34,6 +34,7 @@ export default [
       "lodash/uniq",
       "prettier",
       "@oclif/errors/handle",
+      "chokidar",
     ],
   },
   // UMD for demo web page
