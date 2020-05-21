@@ -2,6 +2,7 @@ import glob from "glob";
 import { readFile as readFileNode } from "fs";
 import { promisify } from "util";
 import { gqlPluckFromCodeStringSync } from "@graphql-toolkit/graphql-tag-pluck";
+import { buildClientSchema, printSchema } from "graphql";
 
 const readFile = promisify(readFileNode);
 
@@ -64,5 +65,11 @@ export function findGraphqlDocuments({
 
 export async function readSchema(path: string) {
   const rawfile = await readFile(path);
-  return String(rawfile);
+  if (path.toLowerCase().endsWith("json")) {
+    const clientSchema = buildClientSchema(JSON.parse(String(rawfile)));
+    const schema = printSchema(clientSchema);
+    return schema;
+  } else {
+    return String(rawfile);
+  }
 }
