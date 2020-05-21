@@ -11,6 +11,7 @@ Generate typescript types from graphql schema + documents.
 - readme + documentation
 - test built files before publish
 - change where gql is imported from
+- init command
 
 ## Why not graphql-code-generator?
 
