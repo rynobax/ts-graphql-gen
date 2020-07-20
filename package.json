@@ -27,7 +27,7 @@
     "chokidar": "^3.4.0",
     "glob": "^7.1.6",
     "graphql": "^15.0.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "prettier": "^2.0.2"
   },
   "devDependencies": {
